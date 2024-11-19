@@ -9,6 +9,60 @@ import SwiftUI
 import Kingfisher
 
 extension Update {
+    struct MainView: View {
+        private let vm = VM()
+        
+        var body: some View {
+            let _ = Self._printChanges()
+            
+            ZStack {
+                List {
+                    ForEach(vm.dataSource, id: \.id) { comic in
+                        Cell(comic: comic)
+                            .swipeActions(edge: .leading) {
+                                makeFavoriteView(comic: comic)
+                            }
+                            .swipeActions(edge: .trailing) {
+                                makeFavoriteView(comic: comic)
+                            }
+                    }
+                }
+                .listStyle(.plain)
+                .refreshable {
+                    vm.doAction(.loadRemote)
+                }
+                
+                if vm.isLoading {
+                    ProgressView() {
+                        Text("Loading...")
+                            .font(.largeTitle)
+                            .foregroundStyle(.white)
+                    }
+                    .controlSize(.extraLarge)
+                    .tint(.white)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(.black.opacity(0.6))
+                }
+            }
+            .navigationTitle("更新列表")
+            .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                vm.doAction(.loadData)
+            }
+        }
+        
+        // MARK: - Make Something
+        
+        private func makeFavoriteView(comic: DisplayComic) -> some View {
+            Button(comic.favorited ? "取消收藏" : "加入收藏") {
+                vm.doAction(.changeFavorite(request: .init(comic: comic)))
+            }
+            .tint(comic.favorited ? Color.orange : Color.blue)
+        }
+    }
+}
+
+private extension Update {
     struct Cell: View {
         private let comic: DisplayComic
         private let dateFormatter: DateFormatter = .init()
@@ -47,6 +101,8 @@ extension Update {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+        
+        // MARK: - Make Something
         
         private func makeWatchDate() -> String {
             dateFormatter.dateFormat = "yyyy-MM-dd HH:mm"
