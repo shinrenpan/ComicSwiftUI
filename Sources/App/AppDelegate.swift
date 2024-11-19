@@ -18,37 +18,37 @@ struct ComicApp: App {
     
     var body: some Scene {
         WindowGroup {
-            TabView {
-                Tab("更新列表", systemImage: "list.bullet") {
-                    NavigationView {
-                        UpdateVC()
-                            .navigationTitle("更新列表")
-                            .navigationBarTitleDisplayMode(.inline)
+            ZStack {
+                TabView {
+                    Tab("更新列表", systemImage: "list.bullet") {
+                        NavigationView {
+                            Update.MainView()
+                        }
+                    }
+                    Tab("收藏列表", systemImage: "star") {
+                        NavigationView {
+                            FavoriteVC()
+                                .navigationTitle("收藏列表")
+                                .navigationBarTitleDisplayMode(.inline)
+                        }
+                    }
+                    Tab("觀看紀錄", systemImage: "clock") {
+                        NavigationView {
+                            HistoryVC()
+                                .navigationTitle("觀看紀錄")
+                                .navigationBarTitleDisplayMode(.inline)
+                        }
+                    }
+                    Tab("設置", systemImage: "gear") {
+                        NavigationView {
+                            SettingVC()
+                                .navigationTitle("設置")
+                                .navigationBarTitleDisplayMode(.inline)
+                        }
                     }
                 }
-                Tab("收藏列表", systemImage: "star") {
-                    NavigationView {
-                        FavoriteVC()
-                            .navigationTitle("收藏列表")
-                            .navigationBarTitleDisplayMode(.inline)
-                    }
-                }
-                Tab("觀看紀錄", systemImage: "clock") {
-                    NavigationView {
-                        HistoryVC()
-                            .navigationTitle("觀看紀錄")
-                            .navigationBarTitleDisplayMode(.inline)
-                    }
-                }
-                Tab("設置", systemImage: "gear") {
-                    NavigationView {
-                        SettingVC()
-                            .navigationTitle("設置")
-                            .navigationBarTitleDisplayMode(.inline)
-                    }
-                }
+                .environment(\.horizontalSizeClass, .compact)
             }
-            .environment(\.horizontalSizeClass, .compact)
         }
     }
     
@@ -79,14 +79,6 @@ struct ComicApp: App {
             }
         }
     }
-}
-
-private struct UpdateVC: UIViewControllerRepresentable {
-    func makeUIViewController(context: Context) -> Update.VC {
-        Update.VC()
-    }
-    
-    func updateUIViewController(_ uiViewController: Update.VC, context: Context) {}
 }
 
 private struct FavoriteVC: UIViewControllerRepresentable {

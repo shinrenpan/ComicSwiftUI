@@ -13,7 +13,9 @@ extension Update {
     @MainActor
     @Observable
     final class VM {
-        private(set) var state = State.none
+        private(set) var dataSource: [DisplayComic] = []
+        private(set) var isLoading = false
+        private var firstLoad = true
         private let parser = Parser(parserConfiguration: .update())
         
         // MARK: - Public
@@ -23,6 +25,7 @@ extension Update {
             case .loadData:
                 actionLoadData()
             case .loadRemote:
+                firstLoad = true
                 actionLoadRemote()
             case let .localSearch(request):
                 actionLocalSearch(request: request)
@@ -36,20 +39,28 @@ extension Update {
         private func actionLoadData() {
             Task {
                 let comics = await ComicWorker.shared.getAll(fetchLimit: 1000)
-                let response = DataLoadedResponse(comics: comics.compactMap { .init(comic: $0) })
-                state = .dataLoaded(response: response)
+                dataSource = comics.compactMap { .init(comic: $0) }
+                actionLoadRemote()
             }
         }
 
         private func actionLoadRemote() {
+            if !firstLoad { return }
+            firstLoad = false
+            
+            if isLoading { return }
+            isLoading = true
+            
             Task {
                 do {
                     let result = try await parser.anyResult()
                     let array = AnyCodable(result).anyArray ?? [] 
                     await ComicWorker.shared.insertOrUpdateComics(array)
+                    isLoading = false
                     actionLoadData()
                 }
                 catch {
+                    isLoading = false
                     actionLoadData()
                 }
             }
@@ -58,8 +69,7 @@ extension Update {
         private func actionLocalSearch(request: LocalSearchRequest) {
             Task {
                 let comics = await ComicWorker.shared.getAll(keywords: request.keywords)
-                let response = LocalSearchedResponse(comics: comics.compactMap { .init(comic: $0) })
-                state = .localSearched(response: response)
+                dataSource = comics.compactMap { .init(comic: $0) }
             }
         }
 
@@ -67,9 +77,8 @@ extension Update {
             Task {
                 let comic = request.comic
                 
-                if let result = await ComicWorker.shared.updateFavorite(id: comic.id, favorited: !comic.favorited) {
-                    let response = FavoriteChangedResponse(comic: .init(comic: result))
-                    state = .favoriteChanged(response: response)
+                if let _ = await ComicWorker.shared.updateFavorite(id: comic.id, favorited: !comic.favorited) {
+                    actionLoadData()
                 }
             }
         }
