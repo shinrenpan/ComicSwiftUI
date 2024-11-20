@@ -11,15 +11,17 @@ import Kingfisher
 extension Update {
     struct MainView: View {
         private let vm = VM()
+        private let router = Router()
         
         var body: some View {
             ZStack {
                 List {
                     ForEach(vm.dataSource, id: \.id) { comic in
-                        makeComicRaw(comic: comic)
+                        makeComicRow(comic: comic)
                     }
                 }
                 .animation(.default, value: UUID())
+                .tint(.clear) // https://stackoverflow.com/a/74909831
                 .listStyle(.plain)
                 .refreshable {
                     vm.doAction(.loadRemote)
@@ -52,14 +54,16 @@ extension Update {
         
         // MARK: - Make Something
         
-        private func makeComicRaw(comic: DisplayComic) -> some View {
-            Cell(comic: comic)
-                .swipeActions(edge: .leading) {
-                    makeFavoriteButton(comic: comic)
-                }
-                .swipeActions(edge: .trailing) {
-                    makeFavoriteButton(comic: comic)
-                }
+        private func makeComicRow(comic: DisplayComic) -> some View {
+            NavigationLink(destination: router.toDetail(comicId: comic.id)) {
+                Cell(comic: comic)
+                    .swipeActions(edge: .leading) {
+                        makeFavoriteButton(comic: comic)
+                    }
+                    .swipeActions(edge: .trailing) {
+                        makeFavoriteButton(comic: comic)
+                    }
+            }
         }
         
         private func makeFavoriteButton(comic: DisplayComic) -> some View {

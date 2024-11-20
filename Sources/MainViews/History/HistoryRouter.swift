@@ -4,20 +4,17 @@
 //  Created by Shinren Pan on 2024/5/23.
 //
 
-/*
 import UIKit
+import SwiftUI
 
 extension History {
-    @MainActor final class Router {
-        weak var vc: VC?
+    @MainActor
+    final class Router {
         
         // MARK: - Public
         
-        func toDetail(comicId: String) {
-            let to = Detail.VC(comicId: comicId)
-            to.hidesBottomBarWhenPushed = true
-            vc?.navigationController?.show(to, sender: nil)
+        func toDetail(comicId: String) -> some View {
+            Detail.MainView(comicId: comicId)
         }
     }
 }
-*/

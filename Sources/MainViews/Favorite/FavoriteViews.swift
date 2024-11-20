@@ -11,12 +11,15 @@ import Kingfisher
 extension Favorite {
     struct MainView: View {
         private let vm = VM()
+        private let router = Router()
         
         var body: some View {
             ZStack {
                 List {
                     ForEach(vm.dataSource, id: \.id) { comic in
-                        makeComicRaw(comic: comic)
+                        NavigationLink(destination: router.toDetail(comicId: comic.id)) {
+                            makeComicRow(comic: comic)
+                        }
                     }
                 }
                 .animation(.default, value: UUID())
@@ -43,7 +46,7 @@ extension Favorite {
         
         // MARK: - Make Something
         
-        private func makeComicRaw(comic: DisplayComic) -> some View {
+        private func makeComicRow(comic: DisplayComic) -> some View {
             Cell(comic: comic)
                 .swipeActions(edge: .leading) {
                     makeRemoveButton(comic: comic)

@@ -5,6 +5,7 @@
 //
 
 import UIKit
+import SwiftUI
 
 extension Search {
     @MainActor
@@ -14,7 +15,8 @@ extension Search {
         // MARK: - Public
         
         func toDetail(comicId: String) {
-            let to = Detail.VC(comicId: comicId)
+            let view = Detail.MainView(comicId: comicId)
+            let to = UIHostingController(rootView: view)
             to.hidesBottomBarWhenPushed = true
             vc?.navigationController?.show(to, sender: nil)
         }
