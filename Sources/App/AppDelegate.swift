@@ -32,9 +32,7 @@ struct ComicApp: App {
                     }
                     Tab("觀看紀錄", systemImage: "clock") {
                         NavigationView {
-                            HistoryVC()
-                                .navigationTitle("觀看紀錄")
-                                .navigationBarTitleDisplayMode(.inline)
+                            History.MainView()
                         }
                     }
                     Tab("設置", systemImage: "gear") {
@@ -77,14 +75,6 @@ struct ComicApp: App {
             }
         }
     }
-}
-
-private struct HistoryVC: UIViewControllerRepresentable {
-    func makeUIViewController(context: Context) -> History.VC {
-        History.VC()
-    }
-    
-    func updateUIViewController(_ uiViewController: History.VC, context: Context) {}
 }
 
 private struct SettingVC: UIViewControllerRepresentable {

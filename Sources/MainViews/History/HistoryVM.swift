@@ -11,7 +11,7 @@ extension History {
     @MainActor
     @Observable
     final class VM {
-        private(set) var state = State.none
+        private(set) var dataSource: [DisplayComic] = []
         
         // MARK: - Public
         
@@ -19,10 +19,8 @@ extension History {
             switch action {
             case .loadData:
                 actionLoadData()
-            case let .addFavorite(request):
-                actionAddFavorite(request: request)
-            case let .removeFavorite(request):
-                actionRemoveFavorite(request: request)
+            case let .changeFavorite(request):
+                actionChangeFavorite(request: request)
             case let .removeHistory(request):
                 actionRemoveHistory(request: request)
             }
@@ -33,32 +31,25 @@ extension History {
         private func actionLoadData() {
             Task {
                 let comics = await ComicWorker.shared.getHistories()
-                let response = DataLoadedResponse(comics: comics.compactMap { .init(comic: $0) })
-                state = .dataLoaded(response: response)
+                dataSource = comics.compactMap { .init(comic: $0) }
             }
         }
 
-        private func actionAddFavorite(request: AddFavoriteRequest) {
+        private func actionChangeFavorite(request: ChangeFavoriteRequest) {
             Task {
                 let comic = request.comic
-                await ComicWorker.shared.updateFavorite(id: comic.id, favorited: true)
-                actionLoadData()
+                
+                if let _ = await ComicWorker.shared.updateFavorite(id: comic.id, favorited: !comic.favorited) {
+                    actionLoadData()
+                }
             }
         }
-
-        private func actionRemoveFavorite(request: RemoveFavoriteRequest) {
-            Task {
-                let comic = request.comic
-                await ComicWorker.shared.updateFavorite(id: comic.id, favorited: false)
-                actionLoadData()
-            }
-        }
-
+        
         private func actionRemoveHistory(request: RemoveHistoryRequest) {
             Task {
                 let comic = request.comic
                 await ComicWorker.shared.removeHistory(id: comic.id)
-                actionLoadData()
+                dataSource.removeAll(where: { $0.id == comic.id })
             }
         }
     }

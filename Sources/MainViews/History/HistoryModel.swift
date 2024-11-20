@@ -7,26 +7,16 @@
 import UIKit
 
 extension History {
-    // MARK: - Type Alias
-    
-    typealias DataSource = UICollectionViewDiffableDataSource<Int, DisplayComic>
-    typealias Snapshot = NSDiffableDataSourceSnapshot<Int, DisplayComic>
-    typealias CellRegistration = UICollectionView.CellRegistration<UICollectionViewListCell, DisplayComic>
     
     // MARK: - Action / Request
     
     enum Action {
         case loadData
-        case addFavorite(request: AddFavoriteRequest)
-        case removeFavorite(request: RemoveFavoriteRequest)
+        case changeFavorite(request: ChangeFavoriteRequest)
         case removeHistory(request: RemoveHistoryRequest)
     }
     
-    struct AddFavoriteRequest {
-        let comic: DisplayComic
-    }
-    
-    struct RemoveFavoriteRequest {
+    struct ChangeFavoriteRequest {
         let comic: DisplayComic
     }
     
@@ -34,18 +24,9 @@ extension History {
         let comic: DisplayComic
     }
     
-    // MARK: - State / Response
+    // MARK: - Models
     
-    enum State {
-        case none
-        case dataLoaded(response: DataLoadedResponse)
-    }
-    
-    struct DataLoadedResponse {
-        let comics: [DisplayComic]
-    }
-    
-    struct DisplayComic: Hashable {
+    struct DisplayComic: Identifiable {
         let id: String
         let title: String
         let coverURI: String
@@ -54,10 +35,6 @@ extension History {
         let hasNew: Bool
         let note: String
         let watchDate: Date?
-        
-        func hash(into hasher: inout Hasher) {
-            hasher.combine(id)
-        }
         
         init(comic: Database.Comic) {
             self.id = comic.id
