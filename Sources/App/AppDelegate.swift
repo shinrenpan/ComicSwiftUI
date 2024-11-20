@@ -27,9 +27,7 @@ struct ComicApp: App {
                     }
                     Tab("收藏列表", systemImage: "star") {
                         NavigationView {
-                            FavoriteVC()
-                                .navigationTitle("收藏列表")
-                                .navigationBarTitleDisplayMode(.inline)
+                            Favorite.MainView()
                         }
                     }
                     Tab("觀看紀錄", systemImage: "clock") {
@@ -79,14 +77,6 @@ struct ComicApp: App {
             }
         }
     }
-}
-
-private struct FavoriteVC: UIViewControllerRepresentable {
-    func makeUIViewController(context: Context) -> Favorite.VC {
-        Favorite.VC()
-    }
-    
-    func updateUIViewController(_ uiViewController: Favorite.VC, context: Context) {}
 }
 
 private struct HistoryVC: UIViewControllerRepresentable {

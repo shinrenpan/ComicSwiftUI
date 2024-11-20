@@ -19,6 +19,7 @@ extension Update {
                         makeComicRaw(comic: comic)
                     }
                 }
+                .animation(.default, value: UUID())
                 .listStyle(.plain)
                 .refreshable {
                     vm.doAction(.loadRemote)

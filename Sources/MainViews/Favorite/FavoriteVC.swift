@@ -4,6 +4,7 @@
 //  Created by Shinren Pan on 2024/5/22.
 //
 
+/*
 import Observation
 import SwiftUI
 import UIKit
@@ -162,3 +163,4 @@ extension Favorite.VC: CustomTab.ScrollToTopable {
         vo.list.scrollToItem(at: zero, at: .top, animated: true)
     }
 }
+*/

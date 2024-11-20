@@ -7,12 +7,7 @@
 import UIKit
 
 extension Favorite {
-    // MARK: - Type Alias
     
-    typealias DataSource = UICollectionViewDiffableDataSource<Int, DisplayComic>
-    typealias Snapshot = NSDiffableDataSourceSnapshot<Int, DisplayComic>
-    typealias CellRegistration = UICollectionView.CellRegistration<UICollectionViewListCell, DisplayComic>
-
     // MARK: - Action / Request
 
     enum Action {
@@ -24,20 +19,9 @@ extension Favorite {
         let comic: DisplayComic
     }
 
-    // MARK: - State / Response
-
-    enum State {
-        case none
-        case dataLoaded(response: DataLoadedResponse)
-    }
-
-    struct DataLoadedResponse {
-        let comics: [DisplayComic]
-    }
-
     // MARK: - Models
     
-    struct DisplayComic: Hashable {
+    struct DisplayComic: Identifiable {
         let id: String
         let title: String
         let coverURI: String
@@ -45,10 +29,6 @@ extension Favorite {
         let hasNew: Bool
         let note: String
         let watchDate: Date?
-        
-        func hash(into hasher: inout Hasher) {
-            hasher.combine(id)
-        }
         
         init(comic: Database.Comic) {
             self.id = comic.id

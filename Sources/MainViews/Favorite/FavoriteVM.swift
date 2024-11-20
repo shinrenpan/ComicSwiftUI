@@ -11,7 +11,7 @@ extension Favorite {
     @MainActor
     @Observable
     final class VM {
-        private(set) var state = State.none
+        private(set) var dataSource: [DisplayComic] = []
         
         // MARK: - Public
         
@@ -29,8 +29,7 @@ extension Favorite {
         private func actionLoadData() {
             Task {
                 let comics = await ComicWorker.shared.getFavorites()
-                let response = DataLoadedResponse(comics: comics.compactMap {.init(comic: $0) })
-                state = .dataLoaded(response: response)
+                dataSource = comics.compactMap {.init(comic: $0) }
             }
         }
 
@@ -38,7 +37,7 @@ extension Favorite {
             Task {
                 let comic = request.comic
                 await ComicWorker.shared.updateFavorite(id: comic.id, favorited: false)
-                actionLoadData()
+                dataSource.removeAll(where: { $0.id == comic.id })
             }
         }
     }
