@@ -13,18 +13,10 @@ extension Update {
         private let vm = VM()
         
         var body: some View {
-            let _ = Self._printChanges()
-            
             ZStack {
                 List {
                     ForEach(vm.dataSource, id: \.id) { comic in
-                        Cell(comic: comic)
-                            .swipeActions(edge: .leading) {
-                                makeFavoriteView(comic: comic)
-                            }
-                            .swipeActions(edge: .trailing) {
-                                makeFavoriteView(comic: comic)
-                            }
+                        makeComicRaw(comic: comic)
                     }
                 }
                 .listStyle(.plain)
@@ -33,15 +25,7 @@ extension Update {
                 }
                 
                 if vm.isLoading {
-                    ProgressView() {
-                        Text("Loading...")
-                            .font(.largeTitle)
-                            .foregroundStyle(.white)
-                    }
-                    .controlSize(.extraLarge)
-                    .tint(.white)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(.black.opacity(0.6))
+                    loadingView
                 }
             }
             .navigationTitle("更新列表")
@@ -51,9 +35,33 @@ extension Update {
             }
         }
         
+        // MARK: - Computed Properties
+        
+        private var loadingView: some View {
+            ProgressView() {
+                Text("Loading...")
+                    .font(.largeTitle)
+                    .foregroundStyle(.white)
+            }
+            .controlSize(.extraLarge)
+            .tint(.white)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(.black.opacity(0.6))
+        }
+        
         // MARK: - Make Something
         
-        private func makeFavoriteView(comic: DisplayComic) -> some View {
+        private func makeComicRaw(comic: DisplayComic) -> some View {
+            Cell(comic: comic)
+                .swipeActions(edge: .leading) {
+                    makeFavoriteButton(comic: comic)
+                }
+                .swipeActions(edge: .trailing) {
+                    makeFavoriteButton(comic: comic)
+                }
+        }
+        
+        private func makeFavoriteButton(comic: DisplayComic) -> some View {
             Button(comic.favorited ? "取消收藏" : "加入收藏") {
                 vm.doAction(.changeFavorite(request: .init(comic: comic)))
             }
@@ -72,52 +80,68 @@ private extension Update {
         }
         
         var body: some View {
-            HStack(alignment: .top) {
-                KFImage(URL(string: "https:" + comic.coverURI))
-                    .resizable()
-                    .frame(width: 70, height: 90)
+            HStack(alignment: .top, spacing: 8) {
+                coverImage
                 
                 VStack(alignment: .leading, spacing: 4) {
-                    HStack(alignment: .top) {
-                        if comic.favorited {
-                            Image(systemName: "star.fill")
-                                .font(.headline)
-                                .foregroundColor(.blue)
-                        }
-                        
-                        Text(comic.title)
-                            .font(.headline)
-                    }
-                    
-                    Text(comic.note)
-                        .font(.subheadline)
-                    Spacer(minLength: 8)
-                    Text(makeWatchDate())
-                            .font(.footnote)
-                    Text(makeLastUpdate())
-                        .font(.footnote)
-                    Spacer(minLength: 12)
+                    title
+                    note
+                    watchData
+                    lastUpdate
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
         
-        // MARK: - Make Something
+        // MARK: - Computed Properties
         
-        private func makeWatchDate() -> String {
+        private var coverImage: some View {
+            KFImage(URL(string: "https:" + comic.coverURI))
+                .resizable()
+                .frame(width: 70, height: 90)
+        }
+        
+        private var title: some View {
+            HStack(alignment: .top) {
+                if comic.favorited {
+                    Image(systemName: "star.fill")
+                        .font(.headline)
+                        .foregroundColor(.blue)
+                }
+                
+                Text(comic.title)
+                    .font(.headline)
+            }
+        }
+        
+        private var note: some View {
+            Text(comic.note)
+                .font(.subheadline)
+        }
+        
+        private var watchData: some View {
             dateFormatter.dateFormat = "yyyy-MM-dd HH:mm"
+            var text: String
+            
             if let watchDate = comic.watchDate {
-                return "觀看時間: " + dateFormatter.string(from: watchDate)
+                text = "觀看時間: " + dateFormatter.string(from: watchDate)
             }
             else {
-                return "觀看時間: 未觀看"
+                text = "觀看時間: 未觀看"
             }
+            
+            return Text(text)
+                .font(.footnote)
+                .padding(.top, 8)
         }
         
-        private func makeLastUpdate() -> String {
+        private var lastUpdate: some View {
             dateFormatter.dateFormat = "yyyy-MM-dd"
             let lastUpdate = Date(timeIntervalSince1970: comic.lastUpdate)
-            return "最後更新: " + dateFormatter.string(from: lastUpdate)
+            let text = "最後更新: " + dateFormatter.string(from: lastUpdate)
+            
+            return Text(text)
+                .font(.footnote)
+                .padding(.bottom, 12)
         }
     }
 }
