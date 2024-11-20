@@ -7,7 +7,7 @@
 import UIKit
 import WebParser
 
-extension Update {
+extension UpdateView {
     
     // MARK: - Action / Request
     

@@ -9,10 +9,10 @@ import Observation
 import UIKit
 import WebParser
 
-extension Update {
+extension UpdateView {
     @MainActor
     @Observable
-    final class VM {
+    final class ViewModel {
         private(set) var dataSource: [DisplayComic] = []
         private(set) var isLoading = false
         private var firstLoad = true

@@ -22,7 +22,7 @@ struct ComicApp: App {
                 TabView {
                     Tab("更新列表", systemImage: "list.bullet") {
                         NavigationStack {
-                            Update.MainView()
+                            UpdateView()
                         }
                     }
                     Tab("收藏列表", systemImage: "star") {
