@@ -16,7 +16,7 @@ extension History {
             ZStack {
                 List {
                     ForEach(vm.dataSource, id: \.id) { comic in
-                        makeComicRaw(comic: comic)
+                        makeComicRow(comic: comic)
                     }
                 }
                 .animation(.default, value: UUID())
@@ -43,7 +43,7 @@ extension History {
         
         // MARK: - Make Something
         
-        private func makeComicRaw(comic: DisplayComic) -> some View {
+        private func makeComicRow(comic: DisplayComic) -> some View {
             Cell(comic: comic)
                 .swipeActions(edge: .leading) {
                     makeRemoveButton(comic: comic)
