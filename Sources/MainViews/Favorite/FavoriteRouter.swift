@@ -4,6 +4,7 @@
 //  Created by Shinren Pan on 2024/5/22.
 //
 
+/*
 import UIKit
 
 extension Favorite {
@@ -20,3 +21,4 @@ extension Favorite {
         }
     }
 }
+*/
