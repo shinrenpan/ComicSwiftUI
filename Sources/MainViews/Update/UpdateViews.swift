@@ -33,6 +33,9 @@ extension Update {
             }
             .navigationTitle("更新列表")
             .navigationBarTitleDisplayMode(.inline)
+            .navigationDestination(for: String.self) { comicId in
+                router.toDetail(comicId: comicId)
+            }
             .onAppear {
                 vm.doAction(.loadData)
             }
@@ -55,7 +58,7 @@ extension Update {
         // MARK: - Make Something
         
         private func makeComicRow(comic: DisplayComic) -> some View {
-            NavigationLink(destination: router.toDetail(comicId: comic.id)) {
+            NavigationLink(value: comic.id) {
                 Cell(comic: comic)
                     .swipeActions(edge: .leading) {
                         makeFavoriteButton(comic: comic)

@@ -17,7 +17,7 @@ extension History {
             ZStack {
                 List {
                     ForEach(vm.dataSource, id: \.id) { comic in
-                        NavigationLink(destination: router.toDetail(comicId: comic.id)) {
+                        NavigationLink(value: comic.id) {
                             makeComicRow(comic: comic)
                         }
                     }
@@ -31,6 +31,9 @@ extension History {
             }
             .navigationTitle("觀看紀錄")
             .navigationBarTitleDisplayMode(.inline)
+            .navigationDestination(for: String.self) { comicId in
+                router.toDetail(comicId: comicId)
+            }
             .onAppear {
                 vm.doAction(.loadData)
             }
