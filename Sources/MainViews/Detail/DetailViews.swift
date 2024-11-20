@@ -6,97 +6,137 @@
 
 import Kingfisher
 import UIKit
+import SwiftUI
 
 extension Detail {
-    final class Header: UIView {
-        let coverView = UIImageView(frame: .zero)
-            .setup(\.translatesAutoresizingMaskIntoConstraints, value: false)
-            .setup(\.backgroundColor, value: .lightGray)
+    struct MainView: View {
+        private let vm: VM
         
-        let titleLabel = UILabel(frame: .zero)
-            .setup(\.translatesAutoresizingMaskIntoConstraints, value: false)
-            .setup(\.font, value: .preferredFont(forTextStyle: .headline))
-            .setup(\.numberOfLines, value: 2)
-        
-        let authorLabel = UILabel(frame: .zero)
-            .setup(\.translatesAutoresizingMaskIntoConstraints, value: false)
-            .setup(\.font, value: .preferredFont(forTextStyle: .subheadline))
-        
-        let descLabel = UILabel(frame: .zero)
-            .setup(\.translatesAutoresizingMaskIntoConstraints, value: false)
-            .setup(\.font, value: .preferredFont(forTextStyle: .subheadline))
-            .setup(\.numberOfLines, value: 4)
-        
-        init() {
-            super.init(frame: .zero)
-            setupSelf()
-            addViews()
+        init(comicId: String) {
+            self.vm = .init(comicId: comicId)
         }
         
-        @available(*, unavailable)
-        required init?(coder: NSCoder) {
-            fatalError("init(coder:) has not been implemented")
+        var body: some View {
+            ZStack {
+                VStack {
+                    Header(comic: vm.comic)
+                    
+                    List {
+                        ForEach(vm.comic.episodes, id: \.id) { episode in
+                            makeEpisodeRow(episode: episode)
+                        }
+                    }
+                    .animation(.default, value: UUID())
+                    .tint(.clear) // https://stackoverflow.com/a/74909831
+                    .listStyle(.plain)
+                }
+                
+                if vm.isLoading {
+                    loadingView
+                }
+            }
+            .navigationTitle("詳細")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarVisibility(.hidden, for: .tabBar)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    favoriteButton
+                }
+            }
+            .onAppear {
+                vm.doAction(.loadData)
+            }
         }
         
-        // MARK: - Public
+        // MARK: - Computed Properties
         
-        func reloadUI(comic: DisplayComic) {
-            titleLabel.text = comic.title
-            authorLabel.text = comic.author
-            descLabel.text = comic.description
-
-            coverView.kf.setImage(
-                with: URL(string: "https:\(comic.coverURI)"),
-                options: [
-                    .processor(DownsamplingImageProcessor(size: coverView.frame.size)),
-                    .scaleFactor(UIScreen.main.scale),
-                    .cacheOriginalImage,
-                ]
-            )
+        private var loadingView: some View {
+            ProgressView() {
+                Text("Loading...")
+                    .font(.largeTitle)
+                    .foregroundStyle(.white)
+            }
+            .controlSize(.extraLarge)
+            .tint(.white)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(.black.opacity(0.6))
         }
         
-        // MARK: - Setup Something
-
-        private func setupSelf() {
-            let tap = UITapGestureRecognizer(target: self, action: #selector(tapSelf))
-            addGestureRecognizer(tap)
+        private var favoriteButton: some View {
+            Button {
+                vm.doAction(.tapFavorite)
+            } label: {
+                vm.comic.favorited ? Image(systemName: "star.fill") : Image(systemName: "star")
+            }
         }
-
-        // MARK: - Add Something
-
-        func addViews() {
-            let vStack = UIStackView(arrangedSubviews: [titleLabel, authorLabel, descLabel])
-                .setup(\.translatesAutoresizingMaskIntoConstraints, value: false)
-                .setup(\.axis, value: .vertical)
-                .setup(\.spacing, value: 4)
-                .setup(\.alignment, value: .leading)
-            vStack.setCustomSpacing(16, after: authorLabel)
-
-            let hStack = UIStackView(arrangedSubviews: [coverView, vStack])
-                .setup(\.translatesAutoresizingMaskIntoConstraints, value: false)
-                .setup(\.axis, value: .horizontal)
-                .setup(\.spacing, value: 8)
-                .setup(\.alignment, value: .top)
-                .setup(\.isLayoutMarginsRelativeArrangement, value: true)
-                .setup(\.layoutMargins, value: .init(top: 4, left: 8, bottom: 20, right: 8))
-            addSubview(hStack)
-
-            NSLayoutConstraint.activate([
-                coverView.widthAnchor.constraint(equalToConstant: 70),
-                coverView.heightAnchor.constraint(equalToConstant: 90),
-
-                hStack.topAnchor.constraint(equalTo: topAnchor),
-                hStack.leadingAnchor.constraint(equalTo: leadingAnchor),
-                hStack.trailingAnchor.constraint(equalTo: trailingAnchor),
-                hStack.bottomAnchor.constraint(equalTo: bottomAnchor),
-            ])
+        
+        // MARK: - Make Something
+        
+        func makeEpisodeRow(episode: DisplayEpisode) -> some View {
+            HStack {
+                Text(episode.title)
+                Spacer()
+                Image(systemName: "checkmark")
+                    .bold()
+                    .foregroundStyle(.blue)
+                    .opacity(episode.selected ? 1 : 0)
+            }
+            .frame(minHeight: 44)
         }
+    }
+}
 
-        // MARK: - Target / Action
-
-        @objc private func tapSelf() {
-            let numberOfLines = descLabel.numberOfLines
-            descLabel.numberOfLines = numberOfLines > 1 ? 1 : 4
+private extension Detail {
+    struct Header: View {
+        private let comic: DisplayComic
+        @State var lineLimit = 4
+        
+        init(comic: DisplayComic) {
+            self.comic = comic
+        }
+        
+        var body: some View {
+            HStack(alignment: .top, spacing: 8) {
+                coverImage
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    title
+                    author
+                    description
+                }
+                
+                Spacer()
+            }
+            .padding(16)
+        }
+        
+        // MARK: - Computed Properties
+        
+        private var coverImage: some View {
+            KFImage(URL(string: "https:" + comic.coverURI))
+                .resizable()
+                .frame(width: 70, height: 90)
+        }
+        
+        private var title: some View {
+            Text(comic.title)
+                .font(.headline)
+                .lineLimit(2)
+        }
+        
+        private var author: some View {
+            Text(comic.author)
+                .font(.subheadline)
+        }
+        
+        private var description: some View {
+            Text(comic.description ?? "")
+                .font(.subheadline)
+                .lineLimit(lineLimit)
+                .padding(.top, 8)
+                .onTapGesture {
+                    lineLimit = lineLimit > 1 ? 1 : 4
+                }
         }
     }
 }

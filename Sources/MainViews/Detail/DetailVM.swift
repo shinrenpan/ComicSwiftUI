@@ -13,9 +13,11 @@ extension Detail {
     @MainActor
     @Observable
     final class VM {
-        let comicId: String
-        private(set) var state = State.none
+        private(set) var comic = DisplayComic()
+        private(set) var isLoading = false
         private let parser: Parser
+        private let comicId: String
+        private var firstLoad = true
         
         init(comicId: String) {
             self.comicId = comicId
@@ -47,17 +49,25 @@ extension Detail {
                         return .init(episode: $0, selected: selected)
                     }
                     
-                    let displayComic = DisplayComic(comic: comic)
-                    let response = DataLoadedResponse(comic: displayComic, episodes: displayEpisodes)
-                    state = .dataLoaded(response: response)
+                    var displayComic = DisplayComic(comic: comic)
+                    displayComic.episodes = displayEpisodes
+                    self.comic = displayComic
+                    actionLoadRemote()
                 }
                 else {
-                    state = .dataLoaded(response: .init(comic: nil, episodes: []))
+                    self.comic = .init()
+                    actionLoadRemote()
                 }
             }
         }
 
         private func actionLoadRemote() {
+            if !firstLoad { return }
+            firstLoad = false
+            
+            if isLoading { return }
+            isLoading = true
+            
             Task {
                 do {
                     guard let comic = await ComicWorker.shared.getComic(id: comicId) else {
@@ -66,9 +76,11 @@ extension Detail {
                     
                     let result = try await parser.anyResult()
                     await handleLoadRemote(comic: comic, result: result)
+                    isLoading = false
                     actionLoadData()
                 }
                 catch {
+                    isLoading = false
                     actionLoadData()
                 }
             }
@@ -77,7 +89,7 @@ extension Detail {
         private func actionTapFavorite() {
             Task {
                 await ComicWorker.shared.getComic(id: comicId)?.favorited.toggle()
-                actionLoadData()
+                comic.favorited.toggle()
             }
         }
 
