@@ -14,7 +14,7 @@ extension History {
         // MARK: - Public
         
         func toDetail(comicId: String) -> some View {
-            Detail.MainView(comicId: comicId)
+            DetailView(comicId: comicId)
         }
     }
 }

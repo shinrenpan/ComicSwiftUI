@@ -19,7 +19,7 @@ struct UpdateView: View {
         .navigationTitle("更新列表")
         .navigationBarTitleDisplayMode(.inline)
         .navigationDestination(for: String.self) { comicId in
-            Detail.MainView(comicId: comicId)
+            DetailView(comicId: comicId)
         }
         .onAppear {
             viewModel.doAction(.loadData)

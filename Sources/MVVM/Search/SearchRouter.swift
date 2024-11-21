@@ -15,7 +15,7 @@ extension Search {
         // MARK: - Public
         
         func toDetail(comicId: String) {
-            let view = Detail.MainView(comicId: comicId)
+            let view = DetailView(comicId: comicId)
             let to = UIHostingController(rootView: view)
             to.hidesBottomBarWhenPushed = true
             vc?.navigationController?.show(to, sender: nil)

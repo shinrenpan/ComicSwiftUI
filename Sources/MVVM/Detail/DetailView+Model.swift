@@ -1,12 +1,12 @@
 //
-//  DetailModel.swift
+//  DetailView+Model.swift
 //
 //  Created by Shinren Pan on 2024/5/22.
 //
 
 import UIKit
 
-extension Detail {
+extension DetailView {
         
     // MARK: - Action / Request
     
