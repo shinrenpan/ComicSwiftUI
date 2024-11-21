@@ -47,7 +47,10 @@ private extension DetailView {
     var list: some View {
         List {
             ForEach(viewModel.comic.episodes, id: \.id) { episode in
-                cellRow(episode: episode)
+                let to = NavigationPath.ToReader(comicId: viewModel.comicId, episodeId: episode.id)
+                NavigationLink(value: to) {
+                    cellRow(episode: episode)
+                }
             }
         }
         .animation(.default, value: UUID())
@@ -140,59 +143,3 @@ private extension DetailView {
             }
     }
 }
-/*
-private extension Detail {
-    struct Header: View {
-        private let comic: DisplayComic
-        @State var lineLimit = 4
-        
-        init(comic: DisplayComic) {
-            self.comic = comic
-        }
-        
-        var body: some View {
-            HStack(alignment: .top, spacing: 8) {
-                coverImage
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    title
-                    author
-                    description
-                }
-                
-                Spacer()
-            }
-            .padding(16)
-        }
-        
-        // MARK: - Computed Properties
-        
-        private var coverImage: some View {
-            KFImage(URL(string: "https:" + comic.coverURI))
-                .resizable()
-                .frame(width: 70, height: 90)
-        }
-        
-        private var title: some View {
-            Text(comic.title)
-                .font(.headline)
-                .lineLimit(2)
-        }
-        
-        private var author: some View {
-            Text(comic.author)
-                .font(.subheadline)
-        }
-        
-        private var description: some View {
-            Text(comic.description ?? "")
-                .font(.subheadline)
-                .lineLimit(lineLimit)
-                .padding(.top, 8)
-                .onTapGesture {
-                    lineLimit = lineLimit > 1 ? 1 : 4
-                }
-        }
-    }
-}
-*/

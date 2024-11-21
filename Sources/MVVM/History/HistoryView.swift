@@ -38,7 +38,8 @@ private extension HistoryView {
     var list: some View {
         List {
             ForEach(viewModel.dataSource, id: \.id) { comic in
-                NavigationLink(value: comic.id) {
+                let to = NavigationPath.ToDetail(comicId: comic.id)
+                NavigationLink(value: to) {
                     cellRow(comic: comic)
                 }
             }

@@ -13,10 +13,10 @@ extension DetailView {
     @MainActor
     @Observable
     final class ViewModel {
+        @ObservationIgnored let comicId: String
         private(set) var comic = DisplayComic()
         private(set) var isLoading = false
         private let parser: Parser
-        private let comicId: String
         private var firstLoad = true
         
         init(comicId: String) {

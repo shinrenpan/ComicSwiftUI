@@ -28,7 +28,7 @@ extension UpdateView {
     
     // MARK: - Models
     
-    struct DisplayComic: Identifiable {
+    struct DisplayComic: Identifiable, Hashable {
         let id: String
         let title: String
         let coverURI: String
@@ -37,6 +37,10 @@ extension UpdateView {
         let hasNew: Bool
         let note: String
         let watchDate: Date?
+        
+        func hash(into hasher: inout Hasher) {
+            hasher.combine(id)
+        }
         
         init(comic: Database.Comic) {
             self.id = comic.id
