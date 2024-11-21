@@ -21,22 +21,22 @@ struct ComicApp: App {
             ZStack {
                 TabView {
                     Tab("更新列表", systemImage: "list.bullet") {
-                        NavigationView {
-                            Update.MainView()
+                        NavigationStack {
+                            UpdateView()
                         }
                     }
                     Tab("收藏列表", systemImage: "star") {
-                        NavigationView {
-                            Favorite.MainView()
+                        NavigationStack {
+                            FavoriteView()
                         }
                     }
                     Tab("觀看紀錄", systemImage: "clock") {
-                        NavigationView {
-                            History.MainView()
+                        NavigationStack {
+                            HistoryView()
                         }
                     }
                     Tab("設置", systemImage: "gear") {
-                        NavigationView {
+                        NavigationStack {
                             SettingVC()
                                 .navigationTitle("設置")
                                 .navigationBarTitleDisplayMode(.inline)

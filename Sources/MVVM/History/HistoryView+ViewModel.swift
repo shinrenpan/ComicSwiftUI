@@ -1,5 +1,5 @@
 //
-//  HistoryVM.swift
+//  HistoryView+ViewModel.swift
 //
 //  Created by Shinren Pan on 2024/5/23.
 //
@@ -7,10 +7,10 @@
 import Observation
 import UIKit
 
-extension History {
+extension HistoryView {
     @MainActor
     @Observable
-    final class VM {
+    final class ViewModel {
         private(set) var dataSource: [DisplayComic] = []
         
         // MARK: - Public
@@ -40,7 +40,9 @@ extension History {
                 let comic = request.comic
                 
                 if let _ = await ComicWorker.shared.updateFavorite(id: comic.id, favorited: !comic.favorited) {
-                    actionLoadData()
+                    dataSource.indices
+                        .filter { dataSource[$0].id == comic.id }
+                        .forEach { dataSource[$0].favorited.toggle() }
                 }
             }
         }

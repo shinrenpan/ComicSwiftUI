@@ -1,5 +1,5 @@
 //
-//  UpdateModel.swift
+//  UpdateView+Model.swift
 //
 //  Created by Shinren Pan on 2024/5/21.
 //
@@ -7,7 +7,7 @@
 import UIKit
 import WebParser
 
-extension Update {
+extension UpdateView {
     
     // MARK: - Action / Request
     

@@ -1,12 +1,12 @@
 //
-//  HistoryListModels.swift
+//  HistoryView+Model.swift
 //
 //  Created by Shinren Pan on 2024/5/23.
 //
 
 import UIKit
 
-extension History {
+extension HistoryView {
     
     // MARK: - Action / Request
     
@@ -30,7 +30,7 @@ extension History {
         let id: String
         let title: String
         let coverURI: String
-        let favorited: Bool
+        var favorited: Bool
         let lastUpdate: TimeInterval
         let hasNew: Bool
         let note: String

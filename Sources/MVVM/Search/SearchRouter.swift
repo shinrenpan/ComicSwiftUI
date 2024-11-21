@@ -1,13 +1,13 @@
 //
-//  FavoriteRouter.swift
+//  SearchRouter.swift
 //
-//  Created by Shinren Pan on 2024/5/22.
+//  Created by Joe Pan on 2024/11/5.
 //
 
-/*
 import UIKit
+import SwiftUI
 
-extension Favorite {
+extension Search {
     @MainActor
     final class Router {
         weak var vc: VC?
@@ -15,10 +15,10 @@ extension Favorite {
         // MARK: - Public
         
         func toDetail(comicId: String) {
-            let to = Detail.VC(comicId: comicId)
+            let view = DetailView(comicId: comicId)
+            let to = UIHostingController(rootView: view)
             to.hidesBottomBarWhenPushed = true
             vc?.navigationController?.show(to, sender: nil)
         }
     }
 }
-*/
