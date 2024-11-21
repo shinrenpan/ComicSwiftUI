@@ -27,7 +27,7 @@ struct ComicApp: App {
                     }
                     Tab("收藏列表", systemImage: "star") {
                         NavigationStack {
-                            Favorite.MainView()
+                            FavoriteView()
                         }
                     }
                     Tab("觀看紀錄", systemImage: "clock") {

@@ -1,5 +1,5 @@
 //
-//  FavoriteVM.swift
+//  FavoriteView+ViewModel.swift
 //
 //  Created by Shinren Pan on 2024/5/22.
 //
@@ -7,10 +7,10 @@
 import Observation
 import UIKit
 
-extension Favorite {
+extension FavoriteView {
     @MainActor
     @Observable
-    final class VM {
+    final class ViewModel {
         private(set) var dataSource: [DisplayComic] = []
         
         // MARK: - Public
