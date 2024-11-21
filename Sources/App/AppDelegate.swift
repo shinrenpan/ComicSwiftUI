@@ -21,51 +21,96 @@ struct ComicApp: App {
             ZStack {
                 TabView {
                     Tab("更新列表", systemImage: "list.bullet") {
-                        NavigationStack {
-                            UpdateView()
-                        }
+                        tab1
                     }
                     Tab("收藏列表", systemImage: "star") {
-                        NavigationStack {
-                            FavoriteView()
-                        }
+                        tab2
                     }
                     Tab("觀看紀錄", systemImage: "clock") {
-                        NavigationStack {
-                            HistoryView()
-                        }
+                        tab3
                     }
                     Tab("設置", systemImage: "gear") {
-                        NavigationStack {
-                            SettingVC()
-                                .navigationTitle("設置")
-                                .navigationBarTitleDisplayMode(.inline)
-                        }
+                        tab4
                     }
                 }
                 .environment(\.horizontalSizeClass, .compact)
             }
         }
     }
-    
-    // MARK: - Setup Something
+}
 
-    private func setupAppearance() {
+// MARK: - Computed Properties
+
+private extension ComicApp {
+    var tab1: some View {
+        NavigationStack {
+            UpdateView()
+                .navigationDestination(for: NavigationPath.ToDetail.self) { data in
+                    DetailView(comicId: data.comicId)
+                }
+                .navigationDestination(for: NavigationPath.ToReader.self) { data in
+                    ReaderView(comicId: data.comicId, episodeId: data.episodeId)
+                        .ignoresSafeArea(.all)
+                }
+        }
+    }
+    
+    var tab2: some View {
+        NavigationStack {
+            FavoriteView()
+                .navigationDestination(for: NavigationPath.ToDetail.self) { data in
+                    DetailView(comicId: data.comicId)
+                }
+                .navigationDestination(for: NavigationPath.ToReader.self) { data in
+                    ReaderView(comicId: data.comicId, episodeId: data.episodeId)
+                        .ignoresSafeArea(.all)
+                }
+        }
+    }
+    
+    var tab3: some View {
+        NavigationStack {
+            HistoryView()
+                .navigationDestination(for: NavigationPath.ToDetail.self) { data in
+                    DetailView(comicId: data.comicId)
+                }
+                .navigationDestination(for: NavigationPath.ToReader.self) { data in
+                    ReaderView(comicId: data.comicId, episodeId: data.episodeId)
+                        .ignoresSafeArea(.all)
+                }
+        }
+    }
+    
+    var tab4: some View {
+        NavigationStack {
+            SettingVC()
+                .navigationTitle("設置")
+                .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+}
+
+// MARK: - Setup Something
+
+private extension ComicApp {
+    func setupAppearance() {
         let navAppearance = UINavigationBarAppearance()
         navAppearance.configureWithDefaultBackground()
         UINavigationBar.appearance().standardAppearance = navAppearance
         UINavigationBar.appearance().scrollEdgeAppearance = navAppearance.copy()
         UINavigationBar.appearance().compactAppearance = navAppearance.copy()
         UINavigationBar.appearance().compactScrollEdgeAppearance = navAppearance.copy()
-
+        
         let barAppearance = UITabBarAppearance()
         barAppearance.configureWithDefaultBackground()
         UITabBar.appearance().standardAppearance = barAppearance
         UITabBar.appearance().scrollEdgeAppearance = barAppearance.copy()
     }
+}
 
-    // MARK: - Do Something
-    
+// MARK: - Do Something
+
+private extension ComicApp {
     private func doCleanCookies() {
         HTTPCookieStorage.shared.removeCookies(since: Date.distantPast)
         
@@ -83,4 +128,15 @@ private struct SettingVC: UIViewControllerRepresentable {
     }
     
     func updateUIViewController(_ uiViewController: Setting.VC, context: Context) {}
+}
+
+private struct ReaderView: UIViewControllerRepresentable {
+    let comicId: String
+    let episodeId: String
+    
+    func makeUIViewController(context: Context) -> ReaderVC {
+        ReaderVC(comicId: comicId, episodeId: episodeId)
+    }
+    
+    func updateUIViewController(_ uiViewController: ReaderVC, context: Context) {}
 }
