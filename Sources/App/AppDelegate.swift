@@ -32,7 +32,7 @@ struct ComicApp: App {
                     }
                     Tab("觀看紀錄", systemImage: "clock") {
                         NavigationStack {
-                            History.MainView()
+                            HistoryView()
                         }
                     }
                     Tab("設置", systemImage: "gear") {
