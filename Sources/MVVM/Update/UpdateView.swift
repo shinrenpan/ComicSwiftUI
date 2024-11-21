@@ -1,5 +1,5 @@
 //
-//  UpdateViews.swift
+//  UpdateView.swift
 //
 //  Created by Joe Pan on 2024/10/30.
 //
@@ -64,7 +64,7 @@ private extension UpdateView {
     }
 }
 
-// MARK: - Make Something
+// MARK: - Make Cell
 
 private extension UpdateView {
     func cellRow(comic: DisplayComic) -> some View {
