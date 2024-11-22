@@ -83,9 +83,7 @@ private extension ComicApp {
     
     var tab4: some View {
         NavigationStack {
-            SettingVC()
-                .navigationTitle("設置")
-                .navigationBarTitleDisplayMode(.inline)
+            SettingView()
         }
     }
 }
@@ -120,14 +118,6 @@ private extension ComicApp {
             }
         }
     }
-}
-
-private struct SettingVC: UIViewControllerRepresentable {
-    func makeUIViewController(context: Context) -> Setting.VC {
-        Setting.VC()
-    }
-    
-    func updateUIViewController(_ uiViewController: Setting.VC, context: Context) {}
 }
 
 private struct ReaderView: UIViewControllerRepresentable {
