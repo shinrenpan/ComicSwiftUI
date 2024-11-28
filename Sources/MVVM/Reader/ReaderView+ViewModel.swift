@@ -1,5 +1,5 @@
 //
-//  ReaderVC+VM.swift
+//  ReaderView+ViewModel.swift
 //
 //  Created by Shinren Pan on 2024/5/24.
 //
@@ -9,14 +9,13 @@ import Observation
 import UIKit
 import WebParser
 
-extension ReaderVC {
+extension ReaderView {
     @MainActor
     @Observable
-    final class VM {
+    final class ViewModel {
+        private(set) var data = DisplayData()
         let comicId: String
         private(set) var episodeId: String
-        private(set) var state = State.none
-        private(set) var imageDatas: [ImageData] = []
         private let parser: Parser
         
         init(comicId: String, episodeId: String) {
@@ -37,6 +36,10 @@ extension ReaderVC {
                 actionLoadPrev()
             case .loadNext:
                 actionLoadNext()
+            case .reloadHiddenBars:
+                data.hiddenBars.toggle()
+            case .updateReadDirection:
+                data.isHorizontal.toggle()
             }
         }
         
@@ -47,34 +50,33 @@ extension ReaderVC {
                 self.episodeId = episodeId
             }
             
+            if data.isLoading {
+                return
+            }
+            
+            data.isLoading = true
             parser.parserConfiguration.request = makeParseRequest()
             
             Task {
                 do {
-                    let isFavorited = await ComicWorker.shared.getComic(id: comicId)?.favorited ?? false
-                    state = .checkoutFavorited(response: .init(isFavorited: isFavorited))
-                    
+                    data.isLoading = false
                     let result = try await parser.anyResult()
-                    imageDatas = try await makeImagesWithParser(result: result)
-                    
-                    if imageDatas.isEmpty {
-                        state = .dataLoadFail(response: .init(error: .empty))
-                    }
-                    else {
-                        let title = await getCurrentEpisode()?.title
-                        let prevEpisodeId = await getPrevEpisodeId()
-                        let nextEpisodeId = await getNextEpisodeId()
-                        
-                        let response = DataLoadedResponse(
-                            episodeTitle: title,
-                            hasPrev: prevEpisodeId != nil,
-                            hasNext: nextEpisodeId != nil
-                        )
-                        state = .dataLoaded(response: response)
-                    }
+                    let favorited = await ComicWorker.shared.getComic(id: comicId)?.favorited ?? false
+                    let images = try await makeImagesWithParser(result: result)
+                    let title = await getCurrentEpisode()?.title ?? ""
+                    let prevEpisodeId = await getPrevEpisodeId()
+                    let nextEpisodeId = await getNextEpisodeId()
+                    data = .init(
+                        title: title,
+                        images: images,
+                        favorited: favorited,
+                        hasPrev: prevEpisodeId != nil,
+                        hasNext: nextEpisodeId != nil
+                    )
                 }
                 catch {
-                    state = .dataLoadFail(response: .init(error: .parseFail))
+                    data.isLoading = false
+                    data = .init()
                 }
             }
         }
@@ -83,30 +85,23 @@ extension ReaderVC {
             Task {
                 let comic = await ComicWorker.shared.getComic(id: comicId)
                 comic?.favorited.toggle()
-                let isFavorite = comic?.favorited ?? false
-                state = .checkoutFavorited(response: .init(isFavorited: isFavorite))
+                data.favorited.toggle()
             }
         }
         
         private func actionLoadPrev() {
             Task {
-                guard let prevEpisodeId = await getPrevEpisodeId() else {
-                    state = .dataLoadFail(response: .init(error: .noPrev))
-                    return
+                if let prevEpisodeId = await getPrevEpisodeId() {
+                    actionLoadData(request: .init(epidoseId: prevEpisodeId))
                 }
-
-                actionLoadData(request: .init(epidoseId: prevEpisodeId))
             }
         }
 
         private func actionLoadNext() {
             Task {
-                guard let nextEpisodeId = await getNextEpisodeId() else {
-                    state = .dataLoadFail(response: .init(error: .noNext))
-                    return
+                if let nextEpisodeId = await getNextEpisodeId() {
+                    actionLoadData(request: .init(epidoseId: nextEpisodeId))
                 }
-                
-                actionLoadData(request: .init(epidoseId: nextEpisodeId))
             }
         }
         
@@ -127,9 +122,10 @@ extension ReaderVC {
                 return .init(uri: uriDecode)
             }
 
+            /*
             if result.isEmpty {
                 throw LoadImageError.empty
-            }
+            }*/
             
             await ComicWorker.shared.updateHistory(comicId: comicId, episodeId: episodeId)
             

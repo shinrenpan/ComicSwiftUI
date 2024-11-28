@@ -120,6 +120,7 @@ private extension ComicApp {
     }
 }
 
+/*
 private struct ReaderView: UIViewControllerRepresentable {
     let comicId: String
     let episodeId: String
@@ -130,3 +131,4 @@ private struct ReaderView: UIViewControllerRepresentable {
     
     func updateUIViewController(_ uiViewController: ReaderVC, context: Context) {}
 }
+*/
