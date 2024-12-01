@@ -12,7 +12,7 @@ extension SettingView {
     @MainActor
     @Observable
     final class ViewModel{
-        private(set) var dataSource: [DisplaySetting] = []
+        private(set) var data: DisplayData = .init()
         
         // MARK: - Public
         
@@ -39,7 +39,7 @@ extension SettingView {
                 let cacheSize = await getCacheImagesSize()
                 let version = Bundle.main.version + "/" + Bundle.main.build
 
-                dataSource = [
+                data.settings = [
                     .init(id: .localData, title: "本地資料", subTitle: "\(comicCount) 筆"),
                     .init(id: .favorite, title: "收藏紀錄", subTitle: "\(favoriteCount) 筆"),
                     .init(id: .history, title: "觀看紀錄", subTitle: "\(historyCount) 筆"),
