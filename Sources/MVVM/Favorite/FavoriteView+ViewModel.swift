@@ -11,7 +11,7 @@ extension FavoriteView {
     @MainActor
     @Observable
     final class ViewModel {
-        private(set) var dataSource: [DisplayComic] = []
+        private(set) var data: DisplayData = .init()
         
         // MARK: - Public
         
@@ -29,7 +29,7 @@ extension FavoriteView {
         private func actionLoadData() {
             Task {
                 let comics = await ComicWorker.shared.getFavorites()
-                dataSource = comics.compactMap {.init(comic: $0) }
+                data.comics = comics.compactMap {.init(comic: $0) }
             }
         }
 
@@ -37,7 +37,7 @@ extension FavoriteView {
             Task {
                 let comic = request.comic
                 await ComicWorker.shared.updateFavorite(id: comic.id, favorited: false)
-                dataSource.removeAll(where: { $0.id == comic.id })
+                data.comics.removeAll(where: { $0.id == comic.id })
             }
         }
     }

@@ -14,18 +14,10 @@ struct FavoriteView: View {
     
     var body: some View {
         ZStack {
-            if viewModel.dataSource.isEmpty {
-                emptyView
-            }
-            else {
-                list
-            }
+            list
         }
         .navigationTitle("收藏列表")
         .navigationBarTitleDisplayMode(.inline)
-        .navigationDestination(for: String.self) { comicId in
-            DetailView(comicId: comicId)
-        }
         .onAppear {
             viewModel.doAction(.loadData)
         }
@@ -37,9 +29,10 @@ struct FavoriteView: View {
 private extension FavoriteView {
     var list: some View {
         List {
-            ForEach(viewModel.dataSource, id: \.id) { comic in
+            ForEach(viewModel.data.comics, id: \.id) { comic in
                 let to = NavigationPath.ToDetail(comicId: comic.id)
-                NavigationLink(value: to) {
+                ZStack {
+                    NavigationLink(value: to) {}.opacity(0) // 移除 >
                     cellRow(comic: comic)
                 }
             }
@@ -47,6 +40,11 @@ private extension FavoriteView {
         .animation(.default, value: UUID())
         .tint(.clear) // https://stackoverflow.com/a/74909831
         .listStyle(.plain)
+        .overlay {
+           if viewModel.data.comics.isEmpty {
+                emptyView
+            }
+        }
     }
     
     var emptyView: some View {
@@ -69,6 +67,8 @@ private extension FavoriteView {
                 cellWatchData(comic: comic)
                 cellLastUpdate(comic: comic)
             }
+            
+            Spacer()
         }
         .swipeActions(edge: .leading) {
             cellButton(comic: comic)
