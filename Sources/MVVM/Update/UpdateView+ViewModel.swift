@@ -13,7 +13,7 @@ extension UpdateView {
     @MainActor
     @Observable
     final class ViewModel {
-        private(set) var data: DisplayData = .init()
+        var data: DisplayData = .init()
         
         // MARK: - Public
         
@@ -24,8 +24,6 @@ extension UpdateView {
             case .loadRemote:
                 data.firstLoad = true
                 actionLoadRemote()
-            case let .localSearch(request):
-                actionLocalSearch(request: request)
             case let .changeFavorite(request):
                 actionChangeFavorite(request: request)
             }
@@ -35,9 +33,15 @@ extension UpdateView {
 
         private func actionLoadData() {
             Task {
-                let comics = await ComicWorker.shared.getAll(fetchLimit: 1000)
-                data.comics = comics.compactMap { .init(comic: $0) }
-                actionLoadRemote()
+                if data.keywords.isEmpty {
+                    let comics = await ComicWorker.shared.getAll(fetchLimit: 1000)
+                    data.comics = comics.compactMap { .init(comic: $0) }
+                    actionLoadRemote()
+                }
+                else {
+                    let comics = await ComicWorker.shared.getAll(keywords: data.keywords)
+                    data.comics = comics.compactMap { .init(comic: $0) }
+                }
             }
         }
 
@@ -61,13 +65,6 @@ extension UpdateView {
                     data.isLoading = false
                     actionLoadData()
                 }
-            }
-        }
-
-        private func actionLocalSearch(request: LocalSearchRequest) {
-            Task {
-                let comics = await ComicWorker.shared.getAll(keywords: request.keywords)
-                data.comics = comics.compactMap { .init(comic: $0) }
             }
         }
 

@@ -18,6 +18,10 @@ struct UpdateView: View {
         }
         .navigationTitle("更新列表")
         .navigationBarTitleDisplayMode(.inline)
+        .searchable(text: $viewModel.data.keywords, placement: .navigationBarDrawer(displayMode: .always), prompt: "本地搜尋漫畫名稱")
+        .onChange(of: viewModel.data.keywords) {
+            viewModel.doAction(.loadData)
+        }
         .onAppear {
             viewModel.doAction(.loadData)
         }
@@ -47,6 +51,10 @@ private extension UpdateView {
             if viewModel.data.isLoading {
                 loadingView
             }
+            
+            if !viewModel.data.keywords.isEmpty && viewModel.data.comics.isEmpty {
+                emptyView
+            }
         }
     }
     
@@ -60,6 +68,12 @@ private extension UpdateView {
         .tint(.white)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(.black.opacity(0.6))
+    }
+    
+    var emptyView: some View {
+        Text("空空如也")
+            .font(.largeTitle)
+            .foregroundStyle(.secondary)
     }
 }
 

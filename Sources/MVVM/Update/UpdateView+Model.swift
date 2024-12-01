@@ -14,12 +14,7 @@ extension UpdateView {
     enum Action {
         case loadData
         case loadRemote
-        case localSearch(request: LocalSearchRequest)
         case changeFavorite(request: ChangeFavoriteRequest)
-    }
-    
-    struct LocalSearchRequest {
-        let keywords: String
     }
     
     struct ChangeFavoriteRequest {
