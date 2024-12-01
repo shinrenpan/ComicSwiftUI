@@ -47,4 +47,8 @@ extension HistoryView {
             self.watchDate = comic.watchDate
         }
     }
+    
+    struct DisplayData {
+        var comics: [DisplayComic] = []
+    }
 }
