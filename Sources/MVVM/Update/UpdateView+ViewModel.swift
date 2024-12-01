@@ -13,10 +13,7 @@ extension UpdateView {
     @MainActor
     @Observable
     final class ViewModel {
-        private(set) var dataSource: [DisplayComic] = []
-        private(set) var isLoading = false
-        private var firstLoad = true
-        private let parser = Parser(parserConfiguration: .update())
+        private(set) var data: DisplayData = .init()
         
         // MARK: - Public
         
@@ -25,7 +22,7 @@ extension UpdateView {
             case .loadData:
                 actionLoadData()
             case .loadRemote:
-                firstLoad = true
+                data.firstLoad = true
                 actionLoadRemote()
             case let .localSearch(request):
                 actionLocalSearch(request: request)
@@ -39,28 +36,29 @@ extension UpdateView {
         private func actionLoadData() {
             Task {
                 let comics = await ComicWorker.shared.getAll(fetchLimit: 1000)
-                dataSource = comics.compactMap { .init(comic: $0) }
+                data.comics = comics.compactMap { .init(comic: $0) }
                 actionLoadRemote()
             }
         }
 
         private func actionLoadRemote() {
-            if !firstLoad { return }
-            firstLoad = false
+            if !data.firstLoad { return }
+            data.firstLoad = false
             
-            if isLoading { return }
-            isLoading = true
+            if data.isLoading { return }
+            data.isLoading = true
             
             Task {
                 do {
+                    let parser = Parser(parserConfiguration: .update())
                     let result = try await parser.anyResult()
                     let array = AnyCodable(result).anyArray ?? [] 
                     await ComicWorker.shared.insertOrUpdateComics(array)
-                    isLoading = false
+                    data.isLoading = false
                     actionLoadData()
                 }
                 catch {
-                    isLoading = false
+                    data.isLoading = false
                     actionLoadData()
                 }
             }
@@ -69,7 +67,7 @@ extension UpdateView {
         private func actionLocalSearch(request: LocalSearchRequest) {
             Task {
                 let comics = await ComicWorker.shared.getAll(keywords: request.keywords)
-                dataSource = comics.compactMap { .init(comic: $0) }
+                data.comics = comics.compactMap { .init(comic: $0) }
             }
         }
 

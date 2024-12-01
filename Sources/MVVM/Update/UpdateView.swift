@@ -29,9 +29,10 @@ struct UpdateView: View {
 private extension UpdateView {
     var list: some View {
         List {
-            ForEach(viewModel.dataSource, id: \.id) { comic in
+            ForEach(viewModel.data.comics, id: \.id) { comic in
                 let to = NavigationPath.ToDetail(comicId: comic.id)
-                NavigationLink(value: to) {
+                ZStack {
+                    NavigationLink(value: to) {}.opacity(0) // 移除 >
                     cellRow(comic: comic)
                 }
             }
@@ -43,7 +44,7 @@ private extension UpdateView {
             viewModel.doAction(.loadRemote)
         }
         .overlay {
-            if viewModel.isLoading {
+            if viewModel.data.isLoading {
                 loadingView
             }
         }
@@ -75,6 +76,8 @@ private extension UpdateView {
                 cellWatchData(comic: comic)
                 cellLastUpdate(comic: comic)
             }
+            
+            Spacer()
         }
         .swipeActions(edge: .leading) {
             cellFavoriteButton(comic: comic)
