@@ -54,4 +54,11 @@ extension DetailView {
             self.selected = selected
         }
     }
+    
+    struct DisplayData {
+        let comicId: String
+        var isLoading: Bool = false
+        var firstLoad: Bool = true
+        var comic: DisplayComic = .init()
+    }
 }
