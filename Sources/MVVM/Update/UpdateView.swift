@@ -18,6 +18,10 @@ struct UpdateView: View {
         }
         .navigationTitle("更新列表")
         .navigationBarTitleDisplayMode(.inline)
+        .searchable(text: $viewModel.data.keywords, placement: .navigationBarDrawer(displayMode: .always), prompt: "本地搜尋漫畫名稱")
+        .onChange(of: viewModel.data.keywords) {
+            viewModel.doAction(.loadData)
+        }
         .onAppear {
             viewModel.doAction(.loadData)
         }
@@ -29,9 +33,10 @@ struct UpdateView: View {
 private extension UpdateView {
     var list: some View {
         List {
-            ForEach(viewModel.dataSource, id: \.id) { comic in
+            ForEach(viewModel.data.comics, id: \.id) { comic in
                 let to = NavigationPath.ToDetail(comicId: comic.id)
-                NavigationLink(value: to) {
+                ZStack {
+                    NavigationLink(value: to) {}.opacity(0) // 移除 >
                     cellRow(comic: comic)
                 }
             }
@@ -43,8 +48,12 @@ private extension UpdateView {
             viewModel.doAction(.loadRemote)
         }
         .overlay {
-            if viewModel.isLoading {
+            if viewModel.data.isLoading {
                 loadingView
+            }
+            
+            if !viewModel.data.keywords.isEmpty && viewModel.data.comics.isEmpty {
+                emptyView
             }
         }
     }
@@ -59,6 +68,12 @@ private extension UpdateView {
         .tint(.white)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(.black.opacity(0.6))
+    }
+    
+    var emptyView: some View {
+        Text("空空如也")
+            .font(.largeTitle)
+            .foregroundStyle(.secondary)
     }
 }
 
@@ -75,6 +90,8 @@ private extension UpdateView {
                 cellWatchData(comic: comic)
                 cellLastUpdate(comic: comic)
             }
+            
+            Spacer()
         }
         .swipeActions(edge: .leading) {
             cellFavoriteButton(comic: comic)

@@ -14,12 +14,7 @@ extension UpdateView {
     enum Action {
         case loadData
         case loadRemote
-        case localSearch(request: LocalSearchRequest)
         case changeFavorite(request: ChangeFavoriteRequest)
-    }
-    
-    struct LocalSearchRequest {
-        let keywords: String
     }
     
     struct ChangeFavoriteRequest {
@@ -52,5 +47,12 @@ extension UpdateView {
             self.note = comic.note
             self.watchDate = comic.watchDate
         }
+    }
+    
+    struct DisplayData {
+        var comics: [DisplayComic] = []
+        var isLoading: Bool = false
+        var firstLoad: Bool = true
+        var keywords: String = ""
     }
 }
