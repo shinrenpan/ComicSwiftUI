@@ -52,6 +52,9 @@ private extension ComicApp {
                     ReaderView(comicId: data.comicId, episodeId: data.episodeId)
                         .ignoresSafeArea(.all)
                 }
+                .navigationDestination(for: NavigationPath.ToSearch.self) { data in
+                    SearchView()
+                }
         }
     }
     

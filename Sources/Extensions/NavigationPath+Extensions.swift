@@ -15,4 +15,6 @@ extension NavigationPath {
         let comicId: String
         let episodeId: String
     }
+    
+    struct ToSearch: Hashable {}
 }

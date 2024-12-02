@@ -25,7 +25,7 @@ struct SettingView: View {
 private extension SettingView {
     var list: some View {
         List {
-            ForEach(viewModel.dataSource, id: \.id) { setting in
+            ForEach(viewModel.data.settings, id: \.id) { setting in
                 cellRow(setting: setting)
             }
         }

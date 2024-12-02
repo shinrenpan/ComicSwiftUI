@@ -18,6 +18,12 @@ struct UpdateView: View {
         }
         .navigationTitle("更新列表")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                let to = NavigationPath.ToSearch()
+                NavigationLink("線上搜尋", value: to)
+            }
+        }
         .searchable(text: $viewModel.data.keywords, placement: .navigationBarDrawer(displayMode: .always), prompt: "本地搜尋漫畫名稱")
         .onChange(of: viewModel.data.keywords) {
             viewModel.doAction(.loadData)
@@ -52,7 +58,7 @@ private extension UpdateView {
                 loadingView
             }
             
-            if !viewModel.data.keywords.isEmpty && viewModel.data.comics.isEmpty {
+            if viewModel.data.comics.isEmpty {
                 emptyView
             }
         }

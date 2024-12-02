@@ -1,32 +1,28 @@
 //
-//  HistoryView+Model.swift
+//  SearchView+Model.swift
 //
-//  Created by Shinren Pan on 2024/5/23.
+//  Created by Joe Pan on 2024/11/5.
 //
 
 import UIKit
 
-extension HistoryView {
+extension SearchView {
     
     // MARK: - Action / Request
     
     enum Action {
         case loadData
+        case loadNextPage
         case changeFavorite(request: ChangeFavoriteRequest)
-        case removeHistory(request: RemoveHistoryRequest)
     }
     
     struct ChangeFavoriteRequest {
         let comic: DisplayComic
     }
     
-    struct RemoveHistoryRequest {
-        let comic: DisplayComic
-    }
-    
     // MARK: - Models
     
-    struct DisplayComic: Identifiable {
+    struct DisplayComic: Identifiable, Hashable {
         let id: String
         let title: String
         let coverURI: String
@@ -35,6 +31,10 @@ extension HistoryView {
         let hasNew: Bool
         let note: String
         let watchDate: Date?
+        
+        func hash(into hasher: inout Hasher) {
+            hasher.combine(id)
+        }
         
         init(comic: Database.Comic) {
             self.id = comic.id
@@ -46,9 +46,5 @@ extension HistoryView {
             self.note = comic.note
             self.watchDate = comic.watchDate
         }
-    }
-    
-    struct DisplayData {
-        var comics: [DisplayComic] = []
     }
 }

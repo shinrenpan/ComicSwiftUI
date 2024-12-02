@@ -1,14 +1,13 @@
 //
-//  FavoriteView.swift
+//  SearchView.swift
 //
-//  Created by Joe Pan on 2024/10/28.
+//  Created by Joe Pan on 2024/11/5.
 //
 
-import UIKit
 import SwiftUI
 import Kingfisher
 
-struct FavoriteView: View {
+struct SearchView: View {
     @State private var viewModel = ViewModel()
     private let dateFormatter: DateFormatter = .init()
     
@@ -16,9 +15,11 @@ struct FavoriteView: View {
         ZStack {
             list
         }
-        .navigationTitle("收藏列表")
+        .navigationTitle("線上搜尋")
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear {
+        .toolbarVisibility(.hidden, for: .tabBar)
+        .searchable(text: $viewModel.keywords, placement: .navigationBarDrawer(displayMode: .always), prompt: "線上搜尋漫畫名稱")
+        .onSubmit(of: .search) {
             viewModel.doAction(.loadData)
         }
     }
@@ -26,14 +27,20 @@ struct FavoriteView: View {
 
 // MARK: - Computed Properties
 
-private extension FavoriteView {
+private extension SearchView {
     var list: some View {
         List {
-            ForEach(viewModel.data.comics, id: \.id) { comic in
+            ForEach(viewModel.comics.indices, id: \.self) { index in
+                let comic = viewModel.comics[index]
                 let to = NavigationPath.ToDetail(comicId: comic.id)
                 ZStack {
                     NavigationLink(value: to) {}.opacity(0) // 移除 >
                     cellRow(comic: comic)
+                }
+                .onAppear {
+                    if viewModel.hasNextPage && index == viewModel.comics.count - 1 {
+                        viewModel.doAction(.loadNextPage)
+                    }
                 }
             }
         }
@@ -41,10 +48,26 @@ private extension FavoriteView {
         .tint(.clear) // https://stackoverflow.com/a/74909831
         .listStyle(.plain)
         .overlay {
-           if viewModel.data.comics.isEmpty {
+            if viewModel.isLoading {
+                loadingView
+            }
+            
+            if viewModel.dataIsEmpty && viewModel.comics.isEmpty {
                 emptyView
             }
         }
+    }
+    
+    var loadingView: some View {
+        ProgressView() {
+            Text("Loading...")
+                .font(.largeTitle)
+                .foregroundStyle(.white)
+        }
+        .controlSize(.extraLarge)
+        .tint(.white)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(.black.opacity(0.6))
     }
     
     var emptyView: some View {
@@ -54,9 +77,9 @@ private extension FavoriteView {
     }
 }
 
-// MARK: - Make Cell Row
+// MARK: - Make Cell
 
-private extension FavoriteView {
+private extension SearchView {
     func cellRow(comic: DisplayComic) -> some View {
         HStack(alignment: .top, spacing: 8) {
             cellCoverImage(comic: comic)
@@ -71,19 +94,19 @@ private extension FavoriteView {
             Spacer()
         }
         .swipeActions(edge: .leading) {
-            cellButton(comic: comic)
+            cellFavoriteButton(comic: comic)
         }
         .swipeActions(edge: .trailing) {
-            cellButton(comic: comic)
+            cellFavoriteButton(comic: comic)
         }
     }
     
-    func cellButton(comic: DisplayComic) -> some View {
-        Button("取消收藏") {
-            let request = RemoveFavoriteRequest(comic: comic)
-            viewModel.doAction(.removeFavorite(request: request))
+    func cellFavoriteButton(comic: DisplayComic) -> some View {
+        Button(comic.favorited ? "取消收藏" : "加入收藏") {
+            let request = ChangeFavoriteRequest(comic: comic)
+            viewModel.doAction(.changeFavorite(request: request))
         }
-        .tint(.orange)
+        .tint(comic.favorited ? Color.orange : Color.blue)
     }
     
     func cellCoverImage(comic: DisplayComic) -> some View {
@@ -93,8 +116,16 @@ private extension FavoriteView {
     }
     
     func cellTitle(comic: DisplayComic) -> some View {
-        Text(comic.title)
-            .font(.headline)
+        HStack(alignment: .top) {
+            if comic.favorited {
+                Image(systemName: "star.fill")
+                    .font(.headline)
+                    .foregroundColor(.blue)
+            }
+            
+            Text(comic.title)
+                .font(.headline)
+        }
     }
     
     func cellNote(comic: DisplayComic) -> some View {
@@ -123,13 +154,8 @@ private extension FavoriteView {
         let lastUpdate = Date(timeIntervalSince1970: comic.lastUpdate)
         let text = "最後更新: " + dateFormatter.string(from: lastUpdate)
         
-        return HStack {
-            Text(text)
-                .font(.footnote)
-            Text(comic.hasNew ? "New" : "")
-                .font(.footnote)
-                .bold()
-                .foregroundStyle(.red)
-        }
+        return Text(text)
+            .font(.footnote)
+            .padding(.bottom, 12)
     }
 }

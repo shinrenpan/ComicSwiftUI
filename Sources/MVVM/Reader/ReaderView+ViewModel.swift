@@ -13,15 +13,10 @@ extension ReaderView {
     @MainActor
     @Observable
     final class ViewModel {
-        private(set) var data = DisplayData()
-        let comicId: String
-        private(set) var episodeId: String
-        private let parser: Parser
+        private(set) var data: DisplayData
         
         init(comicId: String, episodeId: String) {
-            self.comicId = comicId
-            self.episodeId = episodeId
-            self.parser = .init(parserConfiguration: .images(comicId: comicId, episodeId: episodeId))
+            self.data = .init(comicId: comicId, episodeId: episodeId)
         }
         
         // MARK: - Public
@@ -46,8 +41,12 @@ extension ReaderView {
         // MARK: - Handle Action
 
         private func actionLoadData(request: LoadDataRequest) {
+            if data.episodeId == request.epidoseId {
+                return
+            }
+            
             if let episodeId = request.epidoseId {
-                self.episodeId = episodeId
+                data.episodeId = episodeId
             }
             
             if data.isLoading {
@@ -55,24 +54,23 @@ extension ReaderView {
             }
             
             data.isLoading = true
-            parser.parserConfiguration.request = makeParseRequest()
             
             Task {
                 do {
-                    data.isLoading = false
+                    let parser = Parser(parserConfiguration: .images(comicId: data.comicId, episodeId: data.episodeId))
+                    parser.parserConfiguration.request = makeParseRequest()
                     let result = try await parser.anyResult()
-                    let favorited = await ComicWorker.shared.getComic(id: comicId)?.favorited ?? false
+                    let favorited = await ComicWorker.shared.getComic(id: data.comicId)?.favorited ?? false
                     let images = try await makeImagesWithParser(result: result)
                     let title = await getCurrentEpisode()?.title ?? ""
                     let prevEpisodeId = await getPrevEpisodeId()
                     let nextEpisodeId = await getNextEpisodeId()
-                    data = .init(
-                        title: title,
-                        images: images,
-                        favorited: favorited,
-                        hasPrev: prevEpisodeId != nil,
-                        hasNext: nextEpisodeId != nil
-                    )
+                    data.favorited = favorited
+                    data.images = images
+                    data.title = title
+                    data.prevEpesodeId = prevEpisodeId
+                    data.nextEpesodeId = nextEpisodeId
+                    data.isLoading = false
                 }
                 catch {
                     data.isLoading = false
@@ -83,7 +81,7 @@ extension ReaderView {
 
         private func actionUpdateFavorite() {
             Task {
-                let comic = await ComicWorker.shared.getComic(id: comicId)
+                let comic = await ComicWorker.shared.getComic(id: data.comicId)
                 comic?.favorited.toggle()
                 data.favorited.toggle()
             }
@@ -122,18 +120,13 @@ extension ReaderView {
                 return .init(uri: uriDecode)
             }
 
-            /*
-            if result.isEmpty {
-                throw LoadImageError.empty
-            }*/
-            
-            await ComicWorker.shared.updateHistory(comicId: comicId, episodeId: episodeId)
+            await ComicWorker.shared.updateHistory(comicId: data.comicId, episodeId: data.comicId)
             
             return result
         }
         
         private func makeParseRequest() -> URLRequest {
-            let uri = "https://tw.manhuagui.com/comic/\(comicId)/\(episodeId).html"
+            let uri = "https://tw.manhuagui.com/comic/\(data.comicId)/\(data.episodeId).html"
             let urlComponents = URLComponents(string: uri)!
 
             return .init(url: urlComponents.url!)
@@ -142,14 +135,14 @@ extension ReaderView {
         // MARK: - Get Something
         
         private func getCurrentEpisode() async -> Database.Episode? {
-            let episodes = await ComicWorker.shared.getEpisodes(comicId: comicId)
-            return episodes.first(where: { $0.id == episodeId })
+            let episodes = await ComicWorker.shared.getEpisodes(comicId: data.comicId)
+            return episodes.first(where: { $0.id == data.episodeId })
         }
         
         private func getPrevEpisodeId() async -> String? {
-            let episodes = await ComicWorker.shared.getEpisodes(comicId: comicId)
+            let episodes = await ComicWorker.shared.getEpisodes(comicId: data.comicId)
             
-            guard let currentIndex = episodes.firstIndex(where: { $0.id == episodeId }) else {
+            guard let currentIndex = episodes.firstIndex(where: { $0.id == data.episodeId }) else {
                 return nil
             }
             
@@ -158,9 +151,9 @@ extension ReaderView {
         }
         
         private func getNextEpisodeId() async -> String? {
-            let episodes = await ComicWorker.shared.getEpisodes(comicId: comicId)
+            let episodes = await ComicWorker.shared.getEpisodes(comicId: data.comicId)
             
-            guard let currentIndex = episodes.firstIndex(where: { $0.id == episodeId }) else {
+            guard let currentIndex = episodes.firstIndex(where: { $0.id == data.episodeId }) else {
                 return nil
             }
             

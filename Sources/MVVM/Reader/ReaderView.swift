@@ -16,12 +16,16 @@ struct ReaderView: View {
     }
     
     var body: some View {
-        VStack {
+        ZStack {
             switch viewModel.data.isHorizontal {
             case true:
                 hScrollView
             case false:
                 vScrollView
+            }
+            
+            if viewModel.data.isLoading {
+                loadingView
             }
         }
         //.ignoresSafeArea(.all, edges: [.top, .leading, .trailing])
@@ -87,11 +91,24 @@ private extension ReaderView {
             }
         }
     }
+  
+    var loadingView: some View {
+        ProgressView() {
+            Text("Loading...")
+                .font(.largeTitle)
+                .foregroundStyle(.white)
+        }
+        .controlSize(.extraLarge)
+        .tint(.white)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(.black.opacity(0.6))
+    }
     
     var toolBarPrveButton: some View {
         Button("上一話") {
             viewModel.doAction(.loadPrev)
-        }.disabled(!viewModel.data.hasPrev)
+        }
+        .disabled(!viewModel.data.hasPrev || viewModel.data.isLoading)
     }
     
     var toolbarMenu: some View {
@@ -123,7 +140,7 @@ private extension ReaderView {
             } label: {
                 HStack {
                     Text(viewModel.data.isHorizontal ? "直式閱讀" : "橫向閱讀")
-                    Image(systemName: viewModel.data.favorited ? "arrow.left.and.right.text.vertical" : "arrow.up.and.down.text.horizontal")
+                    Image(systemName: viewModel.data.isHorizontal ? "arrow.up.and.down.text.horizontal" : "arrow.left.and.right.text.vertical")
                 }
             }
         }
@@ -133,11 +150,13 @@ private extension ReaderView {
             favoriteButton
             listButton
         }
+        .disabled(viewModel.data.isLoading)
     }
     
     var toolBarNextButton: some View {
         Button("下一話") {
             viewModel.doAction(.loadNext)
-        }.disabled(!viewModel.data.hasNext)
+        }
+        .disabled(!viewModel.data.hasNext || viewModel.data.isLoading)
     }
 }

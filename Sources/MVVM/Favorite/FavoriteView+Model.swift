@@ -40,4 +40,8 @@ extension FavoriteView {
             self.watchDate = comic.watchDate
         }
     }
+    
+    struct DisplayData {
+        var comics: [DisplayComic] = []
+    }
 }
