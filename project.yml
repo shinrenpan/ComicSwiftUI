@@ -27,8 +27,8 @@ targets:
       base:
         CODE_SIGN_STYLE: Manual
         INFOPLIST_FILE: Sources/App/Info.plist
-        MARKETING_VERSION: 0.0.1
-        CURRENT_PROJECT_VERSION: 20241119
+        MARKETING_VERSION: 0.1.0
+        CURRENT_PROJECT_VERSION: 20241202
         PRODUCT_BUNDLE_IDENTIFIER: com.shinrenpan.Comic
       configs:
         Debug:

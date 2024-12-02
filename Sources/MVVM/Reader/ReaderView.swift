@@ -11,26 +11,33 @@ import Kingfisher
 struct ReaderView: View {
     @State private var viewModel: ViewModel
     
+    private let imageModifier = AnyModifier { request in
+        var result = request
+        result.setValue(.UserAgent.safari.value, forHTTPHeaderField: "User-Agent")
+        result.setValue("https://tw.manhuagui.com", forHTTPHeaderField: "Referer")
+        return result
+    }
+    
     init(comicId: String, episodeId: String) {
         self.viewModel = .init(comicId: comicId, episodeId: episodeId)
     }
     
     var body: some View {
         ZStack {
-            switch viewModel.data.isHorizontal {
+            switch viewModel.isHorizontal {
             case true:
                 hScrollView
             case false:
                 vScrollView
             }
             
-            if viewModel.data.isLoading {
+            if viewModel.isLoading {
                 loadingView
             }
         }
         //.ignoresSafeArea(.all, edges: [.top, .leading, .trailing])
-        .navigationTitle(viewModel.data.title)
-        .toolbarVisibility(viewModel.data.hiddenBars ? .hidden : .visible, for: .navigationBar)
+        .navigationTitle(viewModel.title)
+        .toolbarVisibility(viewModel.hiddenBars ? .hidden : .visible, for: .navigationBar)
         .toolbar {
             ToolbarItemGroup(placement: .bottomBar) {
                 toolBarPrveButton
@@ -40,8 +47,8 @@ struct ReaderView: View {
                 toolBarNextButton
             }
         }
-        .toolbarVisibility(viewModel.data.hiddenBars ? .hidden : .visible, for: .bottomBar)
-        .animation(.default, value: viewModel.data.hiddenBars)
+        .toolbarVisibility(viewModel.hiddenBars ? .hidden : .visible, for: .bottomBar)
+        .animation(.default, value: viewModel.hiddenBars)
         .defersSystemGestures(on: .bottom)
         .onAppear {
             viewModel.doAction(.loadData(request: .init(epidoseId: nil)))
@@ -55,9 +62,9 @@ private extension ReaderView {
     var hScrollView: some View {
         ScrollView(.horizontal) {
             LazyHGrid(rows: [GridItem()], alignment: .center, spacing: 0) {
-                ForEach(viewModel.data.images, id: \.id) { image in
+                ForEach(viewModel.images, id: \.id) { image in
                     KFImage.url(.init(string: image.uri))
-                        .requestModifier(viewModel.data.imageModifier)
+                        .requestModifier(imageModifier)
                         .scaleFactor(UIScreen.main.scale)
                         .cacheOriginalImage()
                         .resizable()
@@ -75,9 +82,9 @@ private extension ReaderView {
     var vScrollView: some View {
         ScrollView(.vertical) {
             LazyVGrid(columns: [GridItem()], alignment: .center, spacing: 0) {
-                ForEach(viewModel.data.images, id: \.id) { image in
+                ForEach(viewModel.images, id: \.id) { image in
                     KFImage.url(.init(string: image.uri))
-                        .requestModifier(viewModel.data.imageModifier)
+                        .requestModifier(imageModifier)
                         .scaleFactor(UIScreen.main.scale)
                         .cacheOriginalImage()
                         .resizable()
@@ -108,7 +115,7 @@ private extension ReaderView {
         Button("上一話") {
             viewModel.doAction(.loadPrev)
         }
-        .disabled(!viewModel.data.hasPrev || viewModel.data.isLoading)
+        .disabled(!viewModel.hasPrev || viewModel.isLoading)
     }
     
     var toolbarMenu: some View {
@@ -128,8 +135,8 @@ private extension ReaderView {
                 viewModel.doAction(.updateFavorite)
             } label: {
                 HStack {
-                    Text(viewModel.data.favorited ? "取消收藏" : "加入收藏")
-                    Image(systemName: viewModel.data.favorited ? "star.fill" : "star")
+                    Text(viewModel.isFavorite ? "取消收藏" : "加入收藏")
+                    Image(systemName: viewModel.isFavorite ? "star.fill" : "star")
                 }
             }
         }
@@ -139,8 +146,8 @@ private extension ReaderView {
                 viewModel.doAction(.updateReadDirection)
             } label: {
                 HStack {
-                    Text(viewModel.data.isHorizontal ? "直式閱讀" : "橫向閱讀")
-                    Image(systemName: viewModel.data.isHorizontal ? "arrow.up.and.down.text.horizontal" : "arrow.left.and.right.text.vertical")
+                    Text(viewModel.isHorizontal ? "直式閱讀" : "橫向閱讀")
+                    Image(systemName: viewModel.isHorizontal ? "arrow.up.and.down.text.horizontal" : "arrow.left.and.right.text.vertical")
                 }
             }
         }
@@ -150,13 +157,13 @@ private extension ReaderView {
             favoriteButton
             listButton
         }
-        .disabled(viewModel.data.isLoading)
+        .disabled(viewModel.isLoading)
     }
     
     var toolBarNextButton: some View {
         Button("下一話") {
             viewModel.doAction(.loadNext)
         }
-        .disabled(!viewModel.data.hasNext || viewModel.data.isLoading)
+        .disabled(!viewModel.hasNext || viewModel.isLoading)
     }
 }

@@ -32,8 +32,4 @@ extension SettingView {
         let title: String
         let subTitle: String
     }
-    
-    struct DisplayData {
-        var settings: [DisplaySetting] = []
-    }
 }

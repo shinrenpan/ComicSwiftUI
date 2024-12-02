@@ -19,11 +19,11 @@ struct DetailView: View {
     var body: some View {
         ZStack {
             VStack {
-                header(comic: viewModel.data.comic)
+                header(comic: viewModel.comic)
                 list
             }
             
-            if viewModel.data.isLoading {
+            if viewModel.isLoading {
                 loadingView
             }
         }
@@ -46,8 +46,8 @@ struct DetailView: View {
 private extension DetailView {
     var list: some View {
         List {
-            ForEach(viewModel.data.comic.episodes, id: \.id) { episode in
-                let to = NavigationPath.ToReader(comicId: viewModel.data.comicId, episodeId: episode.id)
+            ForEach(viewModel.comic.episodes, id: \.id) { episode in
+                let to = NavigationPath.ToReader(comicId: viewModel.comicId, episodeId: episode.id)
                 NavigationLink(value: to) {
                     cellRow(episode: episode)
                 }
@@ -77,7 +77,7 @@ private extension DetailView {
         Button {
             viewModel.doAction(.tapFavorite)
         } label: {
-            viewModel.data.comic.favorited ? Image(systemName: "star.fill") : Image(systemName: "star")
+            viewModel.comic.favorited ? Image(systemName: "star.fill") : Image(systemName: "star")
         }
     }
 }

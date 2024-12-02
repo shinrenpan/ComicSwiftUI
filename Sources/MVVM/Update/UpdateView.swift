@@ -24,8 +24,8 @@ struct UpdateView: View {
                 NavigationLink("線上搜尋", value: to)
             }
         }
-        .searchable(text: $viewModel.data.keywords, placement: .navigationBarDrawer(displayMode: .always), prompt: "本地搜尋漫畫名稱")
-        .onChange(of: viewModel.data.keywords) {
+        .searchable(text: $viewModel.keywords, placement: .navigationBarDrawer(displayMode: .always), prompt: "本地搜尋漫畫名稱")
+        .onChange(of: viewModel.keywords) {
             viewModel.doAction(.loadData)
         }
         .onAppear {
@@ -39,7 +39,7 @@ struct UpdateView: View {
 private extension UpdateView {
     var list: some View {
         List {
-            ForEach(viewModel.data.comics, id: \.id) { comic in
+            ForEach(viewModel.comics, id: \.id) { comic in
                 let to = NavigationPath.ToDetail(comicId: comic.id)
                 ZStack {
                     NavigationLink(value: to) {}.opacity(0) // 移除 >
@@ -54,11 +54,11 @@ private extension UpdateView {
             viewModel.doAction(.loadRemote)
         }
         .overlay {
-            if viewModel.data.isLoading {
+            if viewModel.isLoading {
                 loadingView
             }
             
-            if viewModel.data.comics.isEmpty {
+            if viewModel.comics.isEmpty {
                 emptyView
             }
         }

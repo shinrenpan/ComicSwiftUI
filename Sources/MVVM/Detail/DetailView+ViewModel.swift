@@ -13,10 +13,13 @@ extension DetailView {
     @MainActor
     @Observable
     final class ViewModel {
-        private(set) var data: DisplayData
+        let comicId: String
+        private var firstLoad: Bool = true
+        private(set) var comic: DisplayComic = .init()
+        private(set) var isLoading: Bool = false
         
         init(comicId: String) {
-            self.data = .init(comicId: comicId)
+            self.comicId = comicId
         }
         
         // MARK: - Public
@@ -26,7 +29,7 @@ extension DetailView {
             case .loadData:
                 actionLoadData()
             case .loadRemote:
-                data.firstLoad = true
+                firstLoad = true
                 actionLoadRemote()
             case .tapFavorite:
                 actionTapFavorite()
@@ -37,8 +40,8 @@ extension DetailView {
         
         private func actionLoadData() {
             Task {
-                if let comic = await ComicWorker.shared.getComic(id: data.comicId) {
-                    let episodes = await ComicWorker.shared.getEpisodes(comicId: data.comicId)
+                if let comic = await ComicWorker.shared.getComic(id: comicId) {
+                    let episodes = await ComicWorker.shared.getEpisodes(comicId: comicId)
                     
                     let displayEpisodes: [DisplayEpisode] = episodes.compactMap {
                         let selected = comic.watchedId == $0.id
@@ -47,37 +50,37 @@ extension DetailView {
                     
                     var displayComic = DisplayComic(comic: comic)
                     displayComic.episodes = displayEpisodes
-                    data.comic = displayComic
+                    self.comic = displayComic
                     actionLoadRemote()
                 }
                 else {
-                    data.comic = .init()
+                    comic = .init()
                     actionLoadRemote()
                 }
             }
         }
 
         private func actionLoadRemote() {
-            if !data.firstLoad { return }
-            data.firstLoad = false
+            if !firstLoad { return }
+            firstLoad = false
             
-            if data.isLoading { return }
-            data.isLoading = true
+            if isLoading { return }
+            isLoading = true
             
             Task {
                 do {
-                    guard let comic = await ComicWorker.shared.getComic(id: data.comicId) else {
+                    guard let comic = await ComicWorker.shared.getComic(id: comicId) else {
                         throw ParserError.timeout
                     }
                     
-                    let parser = Parser(parserConfiguration: .detail(comicId: data.comicId))
+                    let parser = Parser(parserConfiguration: .detail(comicId: comicId))
                     let result = try await parser.anyResult()
                     await handleLoadRemote(comic: comic, result: result)
-                    data.isLoading = false
+                    isLoading = false
                     actionLoadData()
                 }
                 catch {
-                    data.isLoading = false
+                    isLoading = false
                     actionLoadData()
                 }
             }
@@ -85,8 +88,8 @@ extension DetailView {
 
         private func actionTapFavorite() {
             Task {
-                await ComicWorker.shared.getComic(id: data.comicId)?.favorited.toggle()
-                data.comic.favorited.toggle()
+                await ComicWorker.shared.getComic(id: comicId)?.favorited.toggle()
+                comic.favorited.toggle()
             }
         }
 
