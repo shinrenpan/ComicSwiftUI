@@ -11,7 +11,7 @@ extension HistoryView {
     @MainActor
     @Observable
     final class ViewModel {
-        private(set) var data: DisplayData = .init()
+        private(set) var comics: [DisplayComic] = []
         
         // MARK: - Public
         
@@ -31,7 +31,7 @@ extension HistoryView {
         private func actionLoadData() {
             Task {
                 let comics = await ComicWorker.shared.getHistories()
-                data.comics = comics.compactMap { .init(comic: $0) }
+                self.comics = comics.compactMap { .init(comic: $0) }
             }
         }
 
@@ -40,9 +40,9 @@ extension HistoryView {
                 let comic = request.comic
                 
                 if let _ = await ComicWorker.shared.updateFavorite(id: comic.id, favorited: !comic.favorited) {
-                    data.comics.indices
-                        .filter { data.comics[$0].id == comic.id }
-                        .forEach { data.comics[$0].favorited.toggle() }
+                    comics.indices
+                        .filter { comics[$0].id == comic.id }
+                        .forEach { comics[$0].favorited.toggle() }
                 }
             }
         }
@@ -51,7 +51,7 @@ extension HistoryView {
             Task {
                 let comic = request.comic
                 await ComicWorker.shared.removeHistory(id: comic.id)
-                data.comics.removeAll(where: { $0.id == comic.id })
+                comics.removeAll(where: { $0.id == comic.id })
             }
         }
     }

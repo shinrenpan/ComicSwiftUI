@@ -29,7 +29,7 @@ struct HistoryView: View {
 private extension HistoryView {
     var list: some View {
         List {
-            ForEach(viewModel.data.comics, id: \.id) { comic in
+            ForEach(viewModel.comics, id: \.id) { comic in
                 let to = NavigationPath.ToDetail(comicId: comic.id)
                 ZStack {
                     NavigationLink(value: to) {}.opacity(0) // 移除 >
@@ -41,7 +41,7 @@ private extension HistoryView {
         .tint(.clear) // https://stackoverflow.com/a/74909831
         .listStyle(.plain)
         .overlay {
-           if viewModel.data.comics.isEmpty {
+           if viewModel.comics.isEmpty {
                 emptyView
             }
         }
