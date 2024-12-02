@@ -48,11 +48,4 @@ extension UpdateView {
             self.watchDate = comic.watchDate
         }
     }
-    
-    struct DisplayData {
-        var comics: [DisplayComic] = []
-        var isLoading: Bool = false
-        var firstLoad: Bool = true
-        var keywords: String = ""
-    }
 }
