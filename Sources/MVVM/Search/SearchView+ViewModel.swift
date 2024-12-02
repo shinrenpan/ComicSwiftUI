@@ -1,30 +1,32 @@
 //
-//  SearchVM.swift
+//  SearchView+ViewModel.swift
 //
 //  Created by Joe Pan on 2024/11/5.
 //
 
 import Observation
-import UIKit
 import WebParser
 import AnyCodable
 
-extension Search {
+extension SearchView {
     @MainActor
     @Observable
-    final class VM {
-        private(set) var state = State.none
+    final class ViewModel {
+        var keywords: String = ""
+        private(set) var isLoading: Bool = false
+        private(set) var comics: [DisplayComic] = []
         private(set) var hasNextPage: Bool = false
+        private(set) var dataIsEmpty: Bool = false
         private var page: Int = 1
         
         // MARK: - Public
 
         func doAction(_ action: Action) {
             switch action {
-            case let .loadData(request):
-                actionLoadData(request: request)
-            case let .loadNextPage(request):
-                actionLoadNextPage(request: request)
+            case .loadData:
+                actionLoadData()
+            case .loadNextPage:
+                actionLoadNextPage()
             case let .changeFavorite(request):
                 actionChangeFavorite(request: request)
             }
@@ -32,45 +34,58 @@ extension Search {
         
         // MARK: - Handle Action
         
-        private func actionLoadData(request: LoadDataRequest) {
+        private func actionLoadData() {
             page = 1
+            
+            if keywords.isEmpty { return }
+            if isLoading { return }
+            
+            isLoading = true
             
             Task {
                 do {
-                    let parser = makeParser(keywords: request.keywords)
+                    let parser = Parser(parserConfiguration: .search(keywords: self.keywords, page: self.page))
                     let result = try await parser.anyResult()
                     let array = AnyCodable(result).anyArray ?? []
                     let comics = await ComicWorker.shared.insertOrUpdateComics(array)
                     hasNextPage = comics.count >= 10
                     let displayComics: [DisplayComic] = comics.compactMap { .init(comic: $0) }
-                    let response = DataLoadedResponse(comics: displayComics)
-                    state = .dataLoaded(response: response)
+                    isLoading = false
+                    self.comics = displayComics
+                    dataIsEmpty = displayComics.isEmpty
                 }
                 catch {
-                    state = .dataLoaded(response: .init(comics: []))
+                    isLoading = false
+                    comics = []
+                    dataIsEmpty = true
                 }
             }
         }
         
-        private func actionLoadNextPage(request: LoadNextPageRequest) {
+        private func actionLoadNextPage() {
             if !hasNextPage { return }
+            if keywords.isEmpty { return }
+            if isLoading { return }
+            
+            isLoading = true
             
             page += 1
-            
             Task {
                 do {
-                    let parser = makeParser(keywords: request.keywords)
+                    let parser = Parser(parserConfiguration: .search(keywords: self.keywords, page: self.page))
                     let result = try await parser.anyResult()
                     let array = AnyCodable(result).anyArray ?? []
                     let comics = await ComicWorker.shared.insertOrUpdateComics(array)
                     hasNextPage = comics.count >= 10
                     let displayComics: [DisplayComic] = comics.compactMap { .init(comic: $0) }
-                    let response = NextPageLoadedResponse(comics: displayComics)
-                    state = .nextPageLoaded(response: response)
+                    isLoading = false
+                    self.comics.append(contentsOf: displayComics)
+                    dataIsEmpty = displayComics.isEmpty
                 }
                 catch {
+                    isLoading = false
                     if page > 1 { page -= 1 }
-                    state = .nextPageLoaded(response: .init(comics: []))
+                    dataIsEmpty = comics.isEmpty
                 }
             }
         }
@@ -79,17 +94,12 @@ extension Search {
             Task {
                 let comic = request.comic
                 
-                if let result = await ComicWorker.shared.updateFavorite(id: comic.id, favorited: !comic.favorited) {
-                    let response = FavoriteChangedResponse(comic: .init(comic: result))
-                    state = .favoriteChanged(response: response)
+                if let _ = await ComicWorker.shared.updateFavorite(id: comic.id, favorited: !comic.favorited) {
+                    comics.indices
+                        .filter { comics[$0].id == comic.id }
+                        .forEach { comics[$0].favorited.toggle() }
                 }
             }
-        }
-        
-        // MARK: - Make Something
-        
-        private func makeParser(keywords: String) -> Parser {
-            .init(parserConfiguration: .search(keywords: keywords, page: page))
         }
     }
 }

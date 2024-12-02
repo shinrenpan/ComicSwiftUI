@@ -1,14 +1,13 @@
 //
-//  UpdateView.swift
+//  SearchView.swift
 //
-//  Created by Joe Pan on 2024/10/30.
+//  Created by Joe Pan on 2024/11/5.
 //
 
-import UIKit
 import SwiftUI
 import Kingfisher
 
-struct UpdateView: View {
+struct SearchView: View {
     @State private var viewModel = ViewModel()
     private let dateFormatter: DateFormatter = .init()
     
@@ -16,19 +15,11 @@ struct UpdateView: View {
         ZStack {
             list
         }
-        .navigationTitle("更新列表")
+        .navigationTitle("線上搜尋")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                let to = NavigationPath.ToSearch()
-                NavigationLink("線上搜尋", value: to)
-            }
-        }
-        .searchable(text: $viewModel.data.keywords, placement: .navigationBarDrawer(displayMode: .always), prompt: "本地搜尋漫畫名稱")
-        .onChange(of: viewModel.data.keywords) {
-            viewModel.doAction(.loadData)
-        }
-        .onAppear {
+        .toolbarVisibility(.hidden, for: .tabBar)
+        .searchable(text: $viewModel.keywords, placement: .navigationBarDrawer(displayMode: .always), prompt: "線上搜尋漫畫名稱")
+        .onSubmit(of: .search) {
             viewModel.doAction(.loadData)
         }
     }
@@ -36,29 +27,32 @@ struct UpdateView: View {
 
 // MARK: - Computed Properties
 
-private extension UpdateView {
+private extension SearchView {
     var list: some View {
         List {
-            ForEach(viewModel.data.comics, id: \.id) { comic in
+            ForEach(viewModel.comics.indices, id: \.self) { index in
+                let comic = viewModel.comics[index]
                 let to = NavigationPath.ToDetail(comicId: comic.id)
                 ZStack {
                     NavigationLink(value: to) {}.opacity(0) // 移除 >
                     cellRow(comic: comic)
+                }
+                .onAppear {
+                    if viewModel.hasNextPage && index == viewModel.comics.count - 1 {
+                        viewModel.doAction(.loadNextPage)
+                    }
                 }
             }
         }
         .animation(.default, value: UUID())
         .tint(.clear) // https://stackoverflow.com/a/74909831
         .listStyle(.plain)
-        .refreshable {
-            viewModel.doAction(.loadRemote)
-        }
         .overlay {
-            if viewModel.data.isLoading {
+            if viewModel.isLoading {
                 loadingView
             }
             
-            if viewModel.data.comics.isEmpty {
+            if viewModel.dataIsEmpty && viewModel.comics.isEmpty {
                 emptyView
             }
         }
@@ -85,7 +79,7 @@ private extension UpdateView {
 
 // MARK: - Make Cell
 
-private extension UpdateView {
+private extension SearchView {
     func cellRow(comic: DisplayComic) -> some View {
         HStack(alignment: .top, spacing: 8) {
             cellCoverImage(comic: comic)
