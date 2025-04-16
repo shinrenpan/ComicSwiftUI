@@ -60,7 +60,9 @@ extension ReaderView {
                             .frame(width: proxy.size.width)
                     }
                 }
-            }.scrollTargetBehavior(.paging)
+            }
+            .id(store.episodeId)
+            .scrollTargetBehavior(.paging)
         }
     }
     
@@ -75,6 +77,7 @@ extension ReaderView {
                     }
                 }
             }
+            .id(store.episodeId)
         }
     }
     

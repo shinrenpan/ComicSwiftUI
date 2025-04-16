@@ -109,6 +109,7 @@ struct ReaderFeature {
                 
             case let .episodeIdChanged(id):
                 state.episodeId = id
+                state.images = []
                 return .send(.loadData)
                 
             case .imageTapped:
