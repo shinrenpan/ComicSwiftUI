@@ -52,21 +52,27 @@ extension ReaderView {
     
     @ViewBuilder
     var horizontalReader: some View {
-        ScrollView(.horizontal) {
-            LazyHGrid(rows: [GridItem()], alignment: .center, spacing: 0) {
-                ForEach(store.images, id: \.id) { image in
-                    imageView(image)
+        GeometryReader { proxy in
+            ScrollView(.horizontal) {
+                LazyHGrid(rows: [GridItem()], alignment: .center, spacing: 0) {
+                    ForEach(store.images, id: \.id) { image in
+                        imageView(image)
+                            .frame(width: proxy.size.width)
+                    }
                 }
-            }
-        }.scrollTargetBehavior(.paging)
+            }.scrollTargetBehavior(.paging)
+        }
     }
     
     @ViewBuilder
     var verticalReader: some View {
-        ScrollView(.vertical) {
-            LazyVGrid(columns: [GridItem()], alignment: .center, spacing: 0) {
-                ForEach(store.images, id: \.id) { image in
-                    imageView(image)
+        GeometryReader { proxy in
+            ScrollView(.vertical) {
+                LazyVGrid(columns: [GridItem()], alignment: .center, spacing: 0) {
+                    ForEach(store.images, id: \.id) { image in
+                        imageView(image)
+                            .frame(width: proxy.size.width)
+                    }
                 }
             }
         }
@@ -151,7 +157,6 @@ extension ReaderView {
             .cacheOriginalImage()
             .resizable()
             .scaledToFit()
-            .frame(maxWidth: UIScreen.main.bounds.width)
             .contentShape(.rect)
             .onTapGesture {
                 store.send(.imageTapped)
