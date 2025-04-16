@@ -1,4 +1,4 @@
-[Comic](https://github.com/shinrenpan/Comic)  SwiftUI 版本
+[Comic](https://github.com/shinrenpan/Comic)  SwiftUI + TCA 版本
 
 ## Open Project
 

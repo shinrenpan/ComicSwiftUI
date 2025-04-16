@@ -7,6 +7,8 @@
 import AnyCodable
 import UIKit
 
+// MARK: - Subscript
+
 extension AnyCodable: @unchecked @retroactive Sendable {
     subscript(index: Int) -> AnyCodable {
         anyArray?[safe: index] ?? AnyCodable(NSNull())
@@ -15,9 +17,11 @@ extension AnyCodable: @unchecked @retroactive Sendable {
     subscript(key: String) -> AnyCodable {
         anyDic?[key] ?? AnyCodable(NSNull())
     }
+}
 
-    // MARK: - Computed Properties
+// MARK: - Computed Properties
 
+extension AnyCodable {
     var string: String? {
         value as? String
     }
@@ -59,10 +63,12 @@ extension AnyCodable: @unchecked @retroactive Sendable {
     var isNull: Bool {
         value is NSNull
     }
+}
 
-    // MARK: - Private
+// MARK: - Functions
 
-    private func convertToAnyArray() -> [AnyCodable]? {
+extension AnyCodable {
+    func convertToAnyArray() -> [AnyCodable]? {
         guard let array = value as? [Any?] else {
             return nil
         }
@@ -75,7 +81,7 @@ extension AnyCodable: @unchecked @retroactive Sendable {
         }
     }
 
-    private func convertToAnyDic() -> [String: AnyCodable]? {
+    func convertToAnyDic() -> [String: AnyCodable]? {
         guard let dic = value as? [String: Any?] else {
             return nil
         }
@@ -88,7 +94,7 @@ extension AnyCodable: @unchecked @retroactive Sendable {
         }
     }
 
-    private func convertToNumber() -> NSNumber {
+     func convertToNumber() -> NSNumber {
         if let int {
             return NSNumber(value: int)
         }
