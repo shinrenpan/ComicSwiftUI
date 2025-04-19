@@ -59,6 +59,7 @@ struct HistoryFeature {
                 
             case let .removeButtonTapped(comic):
                 comic.watchedId = nil
+                comic.watchDate = nil
                 
                 return .run { send in
                     await send(.loadCache)
