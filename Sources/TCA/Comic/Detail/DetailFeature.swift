@@ -16,11 +16,6 @@ struct DetailFeature {
         var firstLoad = true
         var contentViewState: ContentViewState = .success
         @Presents var destination: Router.Navigation.State?
-        
-        init(comic: Comic) {
-            comic.episodes?.sort { $0.index < $1.index }
-            self.comic = comic
-        }
     }
     
     enum Action: Equatable {
@@ -41,6 +36,8 @@ struct DetailFeature {
         Reduce { state, action in
             switch action {
             case .loadRemote:
+                state.comic.episodes?.sort { $0.index < $1.index }
+                
                 if !state.firstLoad {
                     return .none
                 }
@@ -78,7 +75,7 @@ struct DetailFeature {
                 state.contentViewState = episodes.isEmpty ? .failure : .success
                 state.comic.detail?.author = author
                 state.comic.detail?.desc = desc
-                state.comic.episodes = episodes
+                state.comic.episodes = episodes.sorted(by: { $0.index < $1.index })
                 return .none
                 
             case .favoriteButtonTapped:
