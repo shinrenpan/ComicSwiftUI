@@ -14,7 +14,7 @@ struct ReaderView: View {
     
     var body: some View {
         contentView
-            .ignoresSafeArea(.all)
+            .statusBarHidden(!store.showBar)
             .defersSystemGestures(on: .bottom)
             .navigationTitle(store.title)
             .navigationBarTitleDisplayMode(.inline)
@@ -42,43 +42,12 @@ struct ReaderView: View {
 extension ReaderView {
     @ViewBuilder
     var contentView: some View {
-        switch store.isHorizontal {
-        case true:
-            horizontalReader
-        case false:
-            verticalReader
-        }
-    }
-    
-    @ViewBuilder
-    var horizontalReader: some View {
-        GeometryReader { proxy in
-            ScrollView(.horizontal) {
-                LazyHGrid(rows: [GridItem()], alignment: .center, spacing: 0) {
-                    ForEach(store.images, id: \.id) { image in
-                        imageView(image)
-                            .frame(width: proxy.size.width)
-                    }
-                }
+        CollectionView(imageData: store.images, isHorizontal: store.isHorizontal)
+            .ignoresSafeArea(.all)
+            .contentShape(.rect)
+            .onTapGesture {
+                store.send(.imageTapped)
             }
-            .id(store.episodeId)
-            .scrollTargetBehavior(.paging)
-        }
-    }
-    
-    @ViewBuilder
-    var verticalReader: some View {
-        GeometryReader { proxy in
-            ScrollView(.vertical) {
-                LazyVGrid(columns: [GridItem()], alignment: .center, spacing: 0) {
-                    ForEach(store.images, id: \.id) { image in
-                        imageView(image)
-                            .frame(width: proxy.size.width)
-                    }
-                }
-            }
-            .id(store.episodeId)
-        }
     }
     
     @ViewBuilder
@@ -138,31 +107,5 @@ extension ReaderView {
             store.send(.nextButtonTapped)
         }
         .disabled(!store.hasNext)
-    }
-}
-
-// MARK: - Functions
-
-extension ReaderView {
-    @ViewBuilder
-    func imageView(_ image: ReaderFeature.Image) -> some View {
-        let imageModifier = AnyModifier { request in
-            var result = request
-            result.setValue(.UserAgent.safari.value, forHTTPHeaderField: "User-Agent")
-            result.setValue("https://tw.manhuagui.com", forHTTPHeaderField: "Referer")
-            return result
-        }
-
-        KFImage.url(.init(string: image.uri))
-            .placeholder { ProgressView().controlSize(.large) }
-            .requestModifier(imageModifier)
-            .scaleFactor(UIScreen.main.scale)
-            .cacheOriginalImage()
-            .resizable()
-            .scaledToFit()
-            .contentShape(.rect)
-            .onTapGesture {
-                store.send(.imageTapped)
-            }
     }
 }
