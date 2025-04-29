@@ -9,6 +9,7 @@ import ComposableArchitecture
 import SwiftUI
 import Kingfisher
 
+@ViewAction(for: ReaderFeature.self)
 struct ReaderView: View {
     @Bindable var store: StoreOf<ReaderFeature>
     
@@ -25,28 +26,27 @@ struct ReaderView: View {
                     toolbar
                 }
             }
-            .sheet(item: $store.scope(state: \.sheet, action: \.sheet)) { store in
-                switch store.case {
-                case let .episodePicker(store):
+            .sheet(item: $store.scope(state: \.sheet?.episodePicker, action: \.sheetAction.episodePicker)) { store in
+                NavigationStack {
                     EpisodePickerView(store: store)
                 }
             }
             .onAppear {
-                store.send(.firstLoad)
+                send(.onAppear)
             }
     }
 }
 
-// MARK: - Computed Properties
+// MARK: - ViewBuilder
 
 extension ReaderView {
     @ViewBuilder
     var contentView: some View {
-        CollectionView(imageData: store.images, isHorizontal: store.isHorizontal)
+        ReaderList(imageData: store.images, isHorizontal: store.isHorizontal)
             .ignoresSafeArea(.all)
             .contentShape(.rect)
             .onTapGesture {
-                store.send(.imageTapped)
+                send(.readerTapped)
             }
     }
     
@@ -64,7 +64,7 @@ extension ReaderView {
     @ViewBuilder
     var prevButton: some View {
         Button("上一話") {
-            store.send(.prevButtonTapped)
+            send(.prevButtonTapped)
         }
         .disabled(!store.hasPrev)
     }
@@ -73,7 +73,7 @@ extension ReaderView {
     var moreButton: some View {
         Menu("更多...") {
             Button {
-                store.send(.episodePickerTapped)
+                send(.pickerButtonTapped)
             } label: {
                 HStack {
                     Text("選取集數")
@@ -82,7 +82,7 @@ extension ReaderView {
             }
             
             Button {
-                store.send(.favoriteButtonTapped)
+                send(.favoriteButtonTapped)
             } label: {
                 HStack {
                     Text(store.comic.favorited ? "取消收藏" : "加入收藏")
@@ -91,7 +91,7 @@ extension ReaderView {
             }
             
             Button {
-                store.send(.directionButtonTapped)
+                send(.directionButtonTapped)
             } label: {
                 HStack {
                     Text(store.isHorizontal ? "直式閱讀" : "橫向閱讀")
@@ -104,7 +104,7 @@ extension ReaderView {
     @ViewBuilder
     var nextButton: some View {
         Button("下一話") {
-            store.send(.nextButtonTapped)
+            send(.nextButtonTapped)
         }
         .disabled(!store.hasNext)
     }

@@ -122,6 +122,8 @@ actor Storage: ModelActor {
     }
 
     func getHistories(keywords: String) -> [Comic] {
+        if keywords.isEmpty { return getHistories() }
+        
         let descriptor = FetchDescriptor<Comic>(
             predicate: #Predicate {
                 $0.watchedId != nil && $0.title.contains(keywords)
@@ -155,6 +157,8 @@ actor Storage: ModelActor {
     }
     
     func getFavorites(keywords: String) -> [Comic] {
+        if keywords.isEmpty { return getFavorites() }
+        
         let descriptor = FetchDescriptor<Comic>(
             predicate: #Predicate {
                 $0.favorited && $0.title.contains(keywords)

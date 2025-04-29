@@ -7,6 +7,7 @@
 
 import ComposableArchitecture
 import AnyCodable
+import WebParser
 
 @Reducer
 struct UpdateFeature {
@@ -15,126 +16,203 @@ struct UpdateFeature {
         var comics: [Comic] = []
         var firstLoad = true
         var searchKey = ""
-        var contentViewState: ContentViewState = .success
-        @Presents var destination: Router.Navigation.State?
+        var isSearching: Bool = false
+        var viewState: ViewState = .success
+        
+        @Presents var navigation: Navigation.State?
     }
     
-    enum Action: Equatable {
-        case firstLoad
-        case loadCache
-        case loadRemote
-        case loadRemoteFailure
-        case loadRemoteSuccess(AnyCodable)
-        case comicsLoaded([Comic])
-        case searchKeyChanged(String)
-        case pullToRefresh
-        case favoriteButtonTapped(Comic)
-        case remoteSearchButtonTapped
-        case comicTapped(Comic)
-        case destination((PresentationAction<Router.Navigation.Action>))
+    enum Action: Equatable, ViewAction {
+        case view(UIAction)
+        case dataAction(DataAction)
+        
+        case navigationAction(PresentationAction<Navigation.Action>)
     }
-    
-    @Dependency(\.comicParser) var parser
-    @Dependency(\.continuousClock) var clock
     
     var body: some ReducerOf<Self> {
         Reduce { state, action in
             switch action {
-            case .firstLoad:
-                if !state.firstLoad {
-                    return .none
-                }
+            case .view(let action):
+                return handleViewAction(action, state: &state)
                 
-                return .run { send in
-                    await send(.loadCache)
-                }
+            case .dataAction(let action):
+                return handleDataAction(action, state: &state)
                 
-            case .loadCache:
-                return .run { send in
-                    let comics = await Storage.shared.getAll()
-                    await send(.comicsLoaded(comics))
-                }
-              
-            case let .searchKeyChanged(key):
-                state.searchKey = key
-                
-                return .run { send in
-                    let comics = await Storage.shared.getAll(keywords: key)
-                    await send(.comicsLoaded(comics))
-                }
-              
-            case .pullToRefresh:
-                state.searchKey = ""
-                
-                return .run { send in
-                    await send(.loadRemote)
-                }
-                
-            case .loadRemote:
-                LoadingActor.isLoading = true
-                
-                return .run { send in
-                    do {
-                        let data = try await parser.updateList()
-                        await send(.loadRemoteSuccess(data))
-                    }
-                    catch {
-                        await send(.loadRemoteFailure)
-                    }
-                }
-            
-            case .loadRemoteFailure:
-                LoadingActor.isLoading = false
-                state.contentViewState = .failure
-                return .none
-                
-            case let .loadRemoteSuccess(data):
-                return .run { send in
-                    let comics = await Storage.shared.insertOrUpdateComics(data.anyArray ?? [])
-                    await send(.comicsLoaded(comics))
-                }
-                
-            case let .comicsLoaded(comics):
-                LoadingActor.isLoading = false
-                state.comics = comics
-                state.contentViewState = .success
-                
-                if !state.firstLoad {
-                    return .none
-                }
-                
-                state.firstLoad = false
-                
-                return .run { send in
-                    try await clock.sleep(for: .milliseconds(500))
-                    await send(.loadRemote)
-                }
-                
-            case let .favoriteButtonTapped(comic):
-                comic.favorited.toggle()
-                return .none
-                
-            case .remoteSearchButtonTapped:
-                state.destination = .remoteSearchView(.init())
-                return .none
-                
-            case let .comicTapped(comic):
-                state.destination = .detailView(.init(comic: comic))
-                return .none
-                
-            case .destination:
+            case .navigationAction:
                 return .none
             }
         }
-        .ifLet(\.$destination, action: \.destination)
+        .ifLet(\.$navigation, action: \.navigationAction)
     }
 }
 
-// MARK: - ContentViewState
+// MARK: - ViewState
 
 extension UpdateFeature {
-    enum ContentViewState {
+    enum ViewState {
         case failure
         case success
+    }
+}
+
+// MARK: - UIAction
+
+extension UpdateFeature {
+    @CasePathable
+    enum UIAction: Equatable {
+        case onAppear
+        case retryButtonTapped
+        case pullToRefresh
+        case favoriteButtonTapped(Comic)
+        case searchButtonTapped
+        case searchKeyChanged(String)
+        case keyboardSearchButtonTapped
+        case searchStateChanged(Bool)
+        case comicTapped(Comic)
+    }
+    
+    func handleViewAction(_ action: UIAction, state: inout State) -> Effect<Action> {
+        switch action {
+        case .onAppear:
+            if !state.firstLoad { return .none }
+            
+            state.firstLoad = false
+            
+            return .run { send in
+                let comics = await Storage.shared.getAll()
+                await send(.dataAction(.dataLoaded(comics)))
+                @Dependency(\.continuousClock) var clock
+                try await clock.sleep(for: .milliseconds(500))
+                await send(.dataAction(.parseData))
+            }
+
+        case .retryButtonTapped:
+            return parseData()
+
+        case .pullToRefresh:
+            state.isSearching = false // 會自動將 searchKey 變為 ""
+            return parseData()
+
+        case .favoriteButtonTapped(let comic):
+            comic.favorited.toggle()
+            return .none
+
+        case .searchButtonTapped:
+            state.navigation = .remoteSearchView(.init())
+            return .none
+
+        case .searchKeyChanged(let key):
+            state.searchKey = key
+            return .none
+
+        case .keyboardSearchButtonTapped:
+            return .run { [searchKey = state.searchKey] send in
+                let comics: [Comic] = await Storage.shared.getAll(keywords: searchKey)
+                await send(.dataAction(.dataSearched(comics)))
+            }
+
+        case .searchStateChanged(let isSearching):
+            state.isSearching = isSearching
+            
+            if isSearching {
+                return .none
+            }
+            
+            // 取消搜尋
+            return .run { send in
+                let comics: [Comic] = await Storage.shared.getAll()
+                await send(.dataAction(.dataLoaded(comics)))
+            }
+
+        case .comicTapped(let comic):
+            state.navigation = .detailView(.init(comic: comic))
+            return .none
+        }
+    }
+}
+
+// MARK: - DataAction
+
+extension UpdateFeature {
+    @CasePathable
+    enum DataAction: Equatable {
+        case dataLoaded([Comic])
+        case parseData
+        case parseFailure
+        case dataSearched([Comic])
+    }
+    
+    func handleDataAction(_ action: DataAction, state: inout State) -> Effect<Action> {
+        switch action {
+        case .dataLoaded(let comics):
+            state.comics = comics
+            state.viewState = comics.isEmpty ? .failure : .success
+            LoadingActor.isLoading = false
+            return .none
+
+        case .parseData:
+            return parseData()
+
+        case .parseFailure:
+            LoadingActor.isLoading = false
+            state.viewState = .failure
+            return .none
+
+        case .dataSearched(let comics):
+            state.comics = comics
+            return .none
+        }
+    }
+    
+    func parseData() -> Effect<Action> {
+        LoadingActor.isLoading = true
+        
+        return .run { send in
+            @Dependency(\.updateParser) var parser
+            
+            do {
+                let data = try await parser.parse()
+                let comics = await Storage.shared.insertOrUpdateComics(data.anyArray ?? [])
+                await send(.dataAction(.dataLoaded(comics)))
+            }
+            catch {
+                await send(.dataAction(.parseFailure))
+            }
+        }
+    }
+}
+
+// MARK: - Navigation 跳轉
+
+extension UpdateFeature {
+    @Reducer
+    enum Navigation {
+        case remoteSearchView(RemoteSearchFeature)
+        case detailView(DetailFeature)
+    }
+}
+
+extension UpdateFeature.Navigation.State: Equatable {}
+extension UpdateFeature.Navigation.Action: Equatable {}
+
+// MARK: - Dependency
+
+@DependencyClient
+struct UpdateParser {
+    let parse: @Sendable () async throws -> AnyCodable
+}
+
+extension UpdateParser: DependencyKey {
+    static let liveValue: UpdateParser = .init {
+        removeWebKitFolder()
+        let parser = await WebParser.Parser(parserConfiguration: .update())
+        return try await parser.decodeResult(AnyCodable.self)
+    }
+}
+
+extension DependencyValues {
+    var updateParser: UpdateParser {
+        get { self[UpdateParser.self] }
+        set { self[UpdateParser.self] = newValue }
     }
 }
