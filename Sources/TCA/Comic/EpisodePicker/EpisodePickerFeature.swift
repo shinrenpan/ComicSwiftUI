@@ -12,19 +12,37 @@ struct EpisodePickerFeature {
     @ObservableState
     struct State: Equatable {
         let comic: Comic
-        let epsideId: String
+        var epsideId: String
     }
     
-    enum Action: Equatable {
-        case episodeTapped(String)
+    enum Action: Equatable, ViewAction {
+        case view(UIAction)
     }
     
     var body: some ReducerOf<EpisodePickerFeature> {
         Reduce { state, action in
             switch action {
-            case .episodeTapped:
-                return .none
+            case .view(let action):
+                return handleViewAction(action, state: &state)
             }
+        }
+    }
+}
+
+// MARK: - ViewAction
+
+extension EpisodePickerFeature {
+    @CasePathable
+    enum UIAction: Equatable {
+        case episodeTapped(String)
+    }
+    
+    func handleViewAction(_ action: UIAction, state: inout State) -> Effect<Action> {
+        switch action {
+        case .episodeTapped(let id):
+            state.epsideId = id
+            // callback to ReaderFeature
+            return .none
         }
     }
 }

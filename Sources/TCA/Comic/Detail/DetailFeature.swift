@@ -7,6 +7,7 @@
 
 import ComposableArchitecture
 import AnyCodable
+import WebParser
 
 @Reducer
 struct DetailFeature {
@@ -14,96 +15,165 @@ struct DetailFeature {
     struct State: Equatable {
         let comic: Comic
         var firstLoad = true
-        var contentViewState: ContentViewState = .success
-        @Presents var destination: Router.Navigation.State?
+        var viewState: ViewState = .success
+        
+        @Presents var navigation: Navigation.State?
     }
     
-    enum Action: Equatable {
-        case loadRemote
-        case loadRemoteFailure
-        case loadRemoteSuccess(AnyCodable)
-        case comicUpdated(author: String, desc: String, episodes: [Comic.Episode])
-        case favoriteButtonTapped
-        case reloadButtonTappen
-        case episodeTapped(Comic.Episode.ID)
-        case destination((PresentationAction<Router.Navigation.Action>))
+    enum Action: Equatable, ViewAction {
+        case view(UIAction)
+        case dataAction(DataAction)
+        
+        case navigationAction(PresentationAction<Navigation.Action>)
     }
-    
-    @Dependency(\.comicParser) var parser
-    @Dependency(\.continuousClock) var clock
     
     var body: some ReducerOf<Self> {
         Reduce { state, action in
             switch action {
-            case .loadRemote:
-                state.comic.episodes?.sort { $0.index < $1.index }
+            case .view(let action):
+                return handleViewAction(action, state: &state)
                 
-                if !state.firstLoad {
-                    return .none
-                }
+            case .dataAction(let action):
+                return handleDataAction(action, state: &state)
                 
-                state.firstLoad = false
-                
-                return .run { [comicId = state.comic.id] send in
-                    try await clock.sleep(for: .milliseconds(500))
-                    LoadingActor.isLoading = true
-                    
-                    do {
-                        let data = try await parser.detail(comicId: comicId)
-                        await send(.loadRemoteSuccess(data))
-                    }
-                    catch {
-                        await send(.loadRemoteFailure)
-                    }
-                }
-                
-            case .loadRemoteFailure:
-                LoadingActor.isLoading = false
-                state.contentViewState = .failure
-                return .none
-                
-            case let .loadRemoteSuccess(data):
-                return .run { send in
-                    let author = data["author"].string ?? ""
-                    let desc = data["desc"].string ?? ""
-                    let episodes = convertToEpisodes(data["episodes"].anyArray ?? [])
-                    await send(.comicUpdated(author: author, desc: desc, episodes: episodes))
-                }
-                
-            case let .comicUpdated(author, desc, episodes):
-                LoadingActor.isLoading = false
-                state.contentViewState = episodes.isEmpty ? .failure : .success
-                state.comic.detail?.author = author
-                state.comic.detail?.desc = desc
-                state.comic.episodes = episodes.sorted(by: { $0.index < $1.index })
-                return .none
-                
-            case .favoriteButtonTapped:
-                state.comic.favorited.toggle()
-                return .none
-            
-            case .reloadButtonTappen:
-                return .run { [comicId = state.comic.id] send in
-                    LoadingActor.isLoading = true
-                    
-                    do {
-                        let data = try await parser.detail(comicId: comicId)
-                        await send(.loadRemoteSuccess(data))
-                    }
-                    catch {
-                        await send(.loadRemoteFailure)
-                    }
-                }
-                
-            case let .episodeTapped(id):
-                state.destination = .readerView(.init(comic: state.comic, episodeId: id))
-                return .none
-                
-            case .destination:
+            case .navigationAction:
                 return .none
             }
         }
-        .ifLet(\.$destination, action: \.destination)
+        .ifLet(\.$navigation, action: \.navigationAction)
+    }
+}
+
+// MARK: - ViewState
+
+extension DetailFeature {
+    enum ViewState {
+        case failure
+        case success
+    }
+}
+
+// MARK: - ViewAction
+
+extension DetailFeature {
+    @CasePathable
+    enum UIAction: Equatable {
+        case onAppear
+        case retryButtonTapped
+        case episodeTapped(String)
+        case favoriteButtonTapped
+    }
+    
+    func handleViewAction(_ action: UIAction, state: inout State) -> Effect<Action> {
+        switch action {
+        case .onAppear:
+            state.comic.episodes?.sort { $0.index < $1.index }
+            
+            if !state.firstLoad {
+                return .none
+            }
+            
+            state.firstLoad = false
+            
+            return .run { send in
+                @Dependency(\.continuousClock) var clock
+                try await clock.sleep(for: .milliseconds(500))
+                await send(.dataAction(.parseData))
+            }
+            
+        case .retryButtonTapped:
+            return parseData(state: &state)
+            
+        case .episodeTapped(let id):
+            state.navigation =  .readerView(.init(comic: state.comic, episodeId: id))
+            return .none
+            
+        case .favoriteButtonTapped:
+            state.comic.favorited.toggle()
+            return .none
+        }
+    }
+}
+
+// MARK: - Data Action
+
+extension DetailFeature {
+    @CasePathable
+    enum DataAction: Equatable {
+        case parseData
+        case parseSuccess(AnyCodable)
+        case parseFailure
+    }
+    
+    func handleDataAction(_ action: DataAction, state: inout State) -> Effect<Action> {
+        switch action {
+        case .parseData:
+            return parseData(state: &state)
+            
+        case .parseSuccess(let data):
+            LoadingActor.isLoading = false
+            state.comic.detail?.author = data["author"].string ?? ""
+            state.comic.detail?.desc = data["desc"].string ?? ""
+            let episodes = convertToEpisodes(data["episodes"].anyArray ?? [])
+            state.comic.episodes =  episodes.sorted(by: { $0.index < $1.index })
+            state.viewState = episodes.isEmpty ? .failure : .success
+            return .none
+            
+        case .parseFailure:
+            LoadingActor.isLoading = false
+            state.viewState = .failure
+            return .none
+        }
+    }
+    
+    func parseData(state: inout State) -> Effect<Action> {
+        LoadingActor.isLoading = true
+        
+        return .run { [comicId = state.comic.id] send in
+            @Dependency(\.detailParser) var detailParser
+            
+            do {
+                let data = try await detailParser.parse(comicId)
+                await send(.dataAction(.parseSuccess(data)))
+            }
+            catch {
+                await send(.dataAction(.parseFailure))
+            }
+        }
+    }
+}
+
+// MARK: - Navigation 跳轉
+
+extension DetailFeature {
+    @Reducer
+    enum Navigation {
+        case readerView(ReaderFeature)
+    }
+}
+
+extension DetailFeature.Navigation.State: Equatable {}
+extension DetailFeature.Navigation.Action: Equatable {}
+
+// MARK: - Dependency
+
+@DependencyClient
+struct DetailParser {
+    let parse: @Sendable (_ comicId: String) async throws -> AnyCodable
+}
+
+extension DetailParser: DependencyKey {
+    static let liveValue: DetailParser = .init { comicId in
+        removeWebKitFolder()
+        let parser = await WebParser.Parser(parserConfiguration: .detail(comicId: comicId))
+        return try await parser.decodeResult(AnyCodable.self)
+    }
+}
+
+extension DependencyValues {
+    var detailParser: DetailParser {
+        get { self[DetailParser.self] }
+        set { self[DetailParser.self] = newValue }
     }
 }
 
@@ -128,13 +198,3 @@ extension DetailFeature {
         }
     }
 }
-
-// MARK: - ContentViewState
-
-extension DetailFeature {
-    enum ContentViewState {
-        case failure
-        case success
-    }
-}
-

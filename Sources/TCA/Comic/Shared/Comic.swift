@@ -117,3 +117,27 @@ extension Comic {
         }
     }
 }
+
+// MARK: - Mock
+
+extension Comic {
+    nonisolated(unsafe) static let rawMock: [String: Any] = [
+        "id": "1128",
+        "title": "ONE PIECE航海王",
+        "cover": "//cf.mhgui.com/cpic/m/1128.jpg",
+        "note": "9999",
+        "lastUpdate": Date.now.timeIntervalSince1970,
+        "favorited": Bool.random(),
+        "hasNew": Bool.random(),
+    ]
+    
+    static let mock: Comic = .init(
+        id: "1128",
+        title: "ONE PIECE航海王",
+        cover: "//cf.mhgui.com/cpic/m/1128.jpg",
+        note: "9999",
+        lastUpdate: Date.now.timeIntervalSince1970,
+        favorited: Bool.random(),
+        hasNew: Bool.random()
+    )
+}

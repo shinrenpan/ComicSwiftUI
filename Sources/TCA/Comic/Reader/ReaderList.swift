@@ -1,5 +1,5 @@
 //
-//  CollectionView.swift
+//  ReaderList.swift
 //  Comic
 //
 //  Created by Joe Pan on 2025/4/25.
@@ -10,20 +10,20 @@ import IdentifiedCollections
 import Kingfisher
 import SwiftUI
 
-struct CollectionView: UIViewRepresentable {
+struct ReaderList: UIViewRepresentable {
     let imageData: IdentifiedArrayOf<ReaderFeature.Image>
     let isHorizontal: Bool
     
-    func makeUIView(context: Context) -> _CollectionView {
+    func makeUIView(context: Context) -> CollectionView {
         return .init()
     }
     
-    func updateUIView(_ uiView: _CollectionView, context: Context) {
+    func updateUIView(_ uiView: CollectionView, context: Context) {
         uiView.reloadUI(imageData: imageData, isHorizontal: isHorizontal)
     }
 }
 
-final class _CollectionView: UICollectionView {
+final class CollectionView: UICollectionView {
     var imageData: IdentifiedArrayOf<ReaderFeature.Image> = []
     var images: [IndexPath: UIImage] = [:] // 已下載的 temp image
     var isHorizontal: Bool = true
@@ -54,7 +54,7 @@ final class _CollectionView: UICollectionView {
     }
 }
 
-extension _CollectionView: UICollectionViewDataSource {
+extension CollectionView: UICollectionViewDataSource {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         imageData.count
     }
@@ -83,7 +83,7 @@ extension _CollectionView: UICollectionViewDataSource {
     }
 }
 
-extension _CollectionView: UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
+extension CollectionView: UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
     public func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         var result = collectionView.frame.size
         
@@ -161,7 +161,7 @@ final class Cell: UICollectionViewCell {
 }
 
 @MainActor
-private func setupLayout(view: _CollectionView, isHorizontal: Bool) {
+private func setupLayout(view: CollectionView, isHorizontal: Bool) {
     let layout = UICollectionViewFlowLayout()
     layout.scrollDirection = isHorizontal ? .horizontal : .vertical
     layout.minimumLineSpacing = 0

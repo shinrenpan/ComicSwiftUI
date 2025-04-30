@@ -35,7 +35,7 @@ struct MainView: View {
     }
 }
 
-// MARK: - Computed Proerties
+// MARK: - ViewBuilder
 
 extension MainView {
     @ViewBuilder

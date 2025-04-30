@@ -26,16 +26,16 @@ actor LoadingActor {
 struct ComicApp: App {
     var body: some Scene {
         WindowGroup {
-            comicMainView
+            contentView
         }
     }
 }
 
-// MARK: - Computed Properties
+// MARK: - ViewBuilder
 
 extension ComicApp {
     @ViewBuilder
-    var comicMainView: some View {
+    var contentView: some View {
         MainView()
             .overlay {
                 if LoadingActor.isLoading { loadingView }

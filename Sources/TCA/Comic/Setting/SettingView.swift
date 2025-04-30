@@ -8,10 +8,26 @@
 import ComposableArchitecture
 import SwiftUI
 
+@ViewAction(for: SettingFeature.self)
 struct SettingView: View {
     @Bindable var store: StoreOf<SettingFeature>
     
     var body: some View {
+        contentView
+            .navigationTitle("設置")
+            .navigationBarTitleDisplayMode(.inline)
+            .alert($store.scope(state: \.alert, action: \.alertAction))
+            .onAppear {
+                send(.onAppear)
+            }
+    }
+}
+
+// MARK: - ViewBuilder
+
+extension SettingView {
+    @ViewBuilder
+    var contentView: some View {
         Form {
             comicCount
             favoriteCount
@@ -19,18 +35,8 @@ struct SettingView: View {
             cacheSize
             version
         }
-        .navigationTitle("設置")
-        .navigationBarTitleDisplayMode(.inline)
-        .alert($store.scope(state: \.alert, action: \.alert))
-        .onAppear {
-            store.send(.loadData)
-        }
     }
-}
-
-// MARK: - Computed Properties
-
-extension SettingView {
+    
     @ViewBuilder
     var comicCount: some View {
         HStack {
@@ -57,7 +63,7 @@ extension SettingView {
         .frame(minHeight: 44)
         .contentShape(.rect)
         .onTapGesture {
-            store.send(.showAlert(.removeFavorite))
+            send(.favoriteTapped)
         }
     }
     
@@ -74,7 +80,7 @@ extension SettingView {
         .frame(minHeight: 44)
         .contentShape(.rect)
         .onTapGesture {
-            store.send(.showAlert(.removeHistory))
+            send(.historyTapped)
         }
     }
     
@@ -91,7 +97,7 @@ extension SettingView {
         .frame(minHeight: 44)
         .contentShape(.rect)
         .onTapGesture {
-            store.send(.showAlert(.removeCache))
+            send(.cacheTapped)
         }
     }
     
@@ -107,11 +113,4 @@ extension SettingView {
         }
         .frame(minHeight: 44)
     }
-}
-
-#Preview {
-    SettingView(store: .init(initialState: SettingFeature.State(), reducer: {
-        SettingFeature()
-            ._printChanges()
-    }))
 }
