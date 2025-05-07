@@ -8,6 +8,7 @@
 import ComposableArchitecture
 import AnyCodable
 import WebParser
+import Foundation
 
 @Reducer
 struct ReaderFeature {
@@ -213,7 +214,9 @@ extension DependencyValues {
 
 extension ReaderFeature {
     func convertToImages(_ data: AnyCodable) -> [ReaderFeature.Image] {
-        data.anyArray?.compactMap {
+        @Dependency(\.uuid) var uuid
+        
+        return data.anyArray?.compactMap {
             guard let uri = $0["uri"].string, !uri.isEmpty else {
                 return nil
             }
@@ -222,7 +225,7 @@ extension ReaderFeature {
                 return nil
             }
             
-            return .init(id: uriDecode, uri: uriDecode)
+            return .init(id: uuid().uuidString, uri: uriDecode)
         } ?? []
     }
     
