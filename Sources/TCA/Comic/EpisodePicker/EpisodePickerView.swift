@@ -10,12 +10,15 @@ import SwiftUI
 
 @ViewAction(for: EpisodePickerFeature.self)
 struct EpisodePickerView: View {
-    let store: StoreOf<EpisodePickerFeature>
+    @StateObject var store: StoreOf<EpisodePickerFeature>
     
     var body: some View {
         contentView
             .navigationTitle("選取集數")
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                send(.onAppear)
+            }
     }
 }
 
