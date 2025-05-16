@@ -34,11 +34,16 @@ struct EpisodePickerFeature {
 extension EpisodePickerFeature {
     @CasePathable
     enum UIAction: Equatable {
+        case onAppear
         case episodeTapped(String)
     }
     
     func handleViewAction(_ action: UIAction, state: inout State) -> Effect<Action> {
         switch action {
+        case .onAppear:
+            state.comic.episodes?.sort { $0.index < $1.index }
+            return .none
+            
         case .episodeTapped(let id):
             state.epsideId = id
             // callback to ReaderFeature

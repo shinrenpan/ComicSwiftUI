@@ -16,6 +16,9 @@ struct EpisodePickerView: View {
         contentView
             .navigationTitle("選取集數")
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                send(.onAppear)
+            }
     }
 }
 
